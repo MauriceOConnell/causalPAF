@@ -1,0 +1,25 @@
+Package: causalPAF
+Type: Package
+Title: Causal Effect for Population Attributatble Fractions (PAF).
+Version: 0.1.0
+Authors: Maurice O'Connell, John Ferguson
+Maintainer: Maurice O'Connell <maurice.oconnell@nuigalway.ie>, John Ferguson <john.ferguson@nuigalway.ie>
+Description: Calculates population attributable fraction causal effects.    Causal definitions of sequential and average attributable fractions using the potential
+outcomes framework. To estimate these quantities in practice, it models exposure-exposure and exposure-disease
+interrelationships using a causal Bayesian network, assuming no unmeasured latent confounders. This allows us to
+model not only the direct impact of removing a risk factor on disease, but also the indirect impact through the effect on
+the prevalence of causally downstream risk factors that are typically ignored when calculating sequential and average
+attributable fractions. The procedure for calculating sequential attributable fractions involves repeated applications of
+Pearl’s do-operator over a fitted Bayesian network, and simulation from the resulting joint probability distributions.    The resulting sequential and average attributable fractions are
+compared with results from a prior estimation approach which uses a single logistic model and which does not
+properly account for differing causal pathways.    In contrast to estimation using a single regression model, the proposed approaches allow consistent
+estimation of sequential, joint and average attributable fractions under general causal structures.    The package also has estimation approaches for path-specific attributable fractions with comparisons to indirect PAF.    More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports: 
+  dplyr (>= 1.0.2), splines2 (>= 0.3.1)
+Depends:
+Suggests:
+ knitr
