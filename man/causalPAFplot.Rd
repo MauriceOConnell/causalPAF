@@ -9,14 +9,18 @@ causalPAFplot(
   exposure = "phys",
   mediator = c("subhtn", "apob_apoa", "whr"),
   response = "case",
-  mediator_model = list(model_list[[6]], model_list[[7]], model_list[[8]]),
   response_model_mediators = response_vs_mediator,
   response_model_exposure = response_vs_phys,
-  in_out,
-  model_list = list(),
-  w,
+  in_outArg,
+  model_listArg,
   NumBootstrap,
-  NumSimulation
+  NumSimulation,
+  plot = "bar",
+  fill = "skyblue",
+  colour = "orange",
+  boxCol = "royalblue",
+  lineCol = "darkblue",
+  summaryCol = "royalblue"
 )
 }
 \arguments{
@@ -28,24 +32,32 @@ causalPAFplot(
 
 \item{response}{The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.}
 
-\item{mediator_model}{A vector of mediator models fitted which must correspond to the same order of the mediator names in the variable ``mediator''.}
-
 \item{response_model_mediators}{A model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.}
 
 \item{response_model_exposure}{A model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure and risk factors in the causal Bayesian network. See example in tutorial.}
 
-\item{in_out}{A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.}
+\item{in_outArg}{A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.}
 
-\item{model_list}{By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_out. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_list'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_out. See tutorial for further examples.}
-
-\item{w}{Column of weights for case control matching listing in same order as patients in dataframe.}
+\item{model_listArg}{By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.}
 
 \item{NumBootstrap}{The number of bootstraps the user wants to use to calculate confidence intervals for the effect. A minimum of 200 bootstrap repilcations (Efron (2016), Computer Age Statistical Inference, page 162) are recommended to calculate standard errors (for intervals of the form: estimate +/-1.96*(standard error of boostrap estimate. However increasing the number of bootstraps can result in the package taking a long time to run. So the user may make to balance speed with accuracy depedning on which is of more value in context.}
 
 \item{NumSimulation}{This is the number of simulatons requested by the user to estimate integrals. The larger the number of simulations the more accurate the results but the longer the code takes to run. Therefore the user may wish to balance speed with accuracy depedning on which is of more value in the specific context of interest. The integrals for continuous variables are estimated using simulation methods.}
+
+\item{plot}{plot can be "forestplot" or "bar" are text inputs where:"forestplot" plots a forest plot."bar" plots a bar chart with error bars.}
+
+\item{fill}{The colour for the fill in the bar chart is set here in text format. The default is fill= "skyblue".}
+
+\item{colour}{The colour for the error bar in teh bar chart is set here in text format. The default is colour = "orange".}
+
+\item{boxCol}{The colour for the box in the forest plot is set here in text format. The default is box = "royalblue".}
+
+\item{lineCol}{The colour for the lines in the forest plot is set here in text format. The default is line="darkblue".}
+
+\item{summaryCol}{The colour for a summary in the forest plot is set here in text format. The default is summary="royalblue"}
 }
 \value{
-
+Prints a forest plot or a bar chart with error bars of the 5 results for each mediator. The 5 results are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (3)Indirect Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
 }
 \description{
 Evaluates Total PAF, Direct PAF, Indirect PAF and Path Specific PAF for a user inputted number of bootstraps and integral simulations

@@ -4,19 +4,31 @@
 \alias{eval_make_formula}
 \title{Evaluates and Makes Formula for regression of exposure or risk factor or outcome on its parents in a causal Bayesian network directed acyclic graph.}
 \usage{
-eval_make_formula(dataframe, in_out, model_list, w)
+eval_make_formula(data, in_out, model_list, w)
 }
 \arguments{
-\item{dataframe}{A wide format dataframe containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.}
+\item{data}{A wide format data containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.}
 
 \item{in_out}{A list of length 2. The first list contains the ``in_vars'' which is a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters.}
 
 \item{model_list}{list of a single name of exposure or risk factor or outcome in form of characters.}
 
-\item{w}{Column of weights for case control matching listing in same order as patients in dataframe.}
+\item{w}{Column of weights for case control matching listing in same order as patients in data.}
 }
 \value{
-\item{model_list }{model list}
+\itemize{
+\item{model_listReturn[[1]] }{model list A}
+\item{model_listReturn[[2]] }{model list B}
+\item{model_listReturn[[3]] }{model list C}
+\item{model_listReturn[[4]] }{model list D}
+\item{model_listReturn[[5]] }{model list E}
+\item{model_listReturn[[6]] }{model list F}
+\item{model_listReturn[[7]] }{model list G}
+\item{model_listReturn[[8]] }{model list H}
+\item{model_listReturn[[9]] }{model list I}
+\item{model_listReturn[[10]] }{model list J}
+\item{model_listReturn[[11]] }{model list K}
+}
 }
 \description{
 Evaluates and Makes Formula for regression of exposure or risk factor or outcome on its parents in a causal Bayesian network directed acyclic graph. Given a causal Bayesian network, directed acyclic graph (DAG) where arrows representing

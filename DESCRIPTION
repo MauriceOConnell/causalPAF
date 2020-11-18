@@ -15,7 +15,12 @@ Imports:
  dplyr,
  MASS,
  splines,
- forestplot
+ forestplot,
+ grid,
+ magrittr,
+ checkmate,
+ ggplot2,
+ rlist
 Depends:
 Suggests:
  knitr
