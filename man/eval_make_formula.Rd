@@ -45,7 +45,7 @@ for the other variables in the network, only depends on the values $x_{pa}_{j}$ 
 }
 in_vars = c("subeduc","moteduc","fatduc")
 outvar = c("phys")
-make_formula(in_vars,outvar)
+make_formula(in_vars,outvar,addCustom = FALSE, custom = "~ regionnn7 + ")
 }
 \keyword{Regression}
 \keyword{models}

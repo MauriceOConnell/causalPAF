@@ -26,7 +26,7 @@
 #' and distributions in the re-weighted dataset where cases are assigned weights 1, and controls are assigned weights
 #'  \eqn{(1\pi−1)/r}. Effectively then we can think of the reweighted population as a random sample.
 #' @export
-#' @import stats dplyr
+#' @import stats
 # #' @importFrom stats formula predict filter lag
 #' @keywords models Regression
 #' @return \item{path_specific_PAF }{path specific PAF}

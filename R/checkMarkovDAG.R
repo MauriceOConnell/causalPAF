@@ -2,10 +2,11 @@
 #' @description The functions checks if the Markov condition holds for the Directed Acyclic Graph (DAG) defined. Sometimes called the Markov assumption, is an assumption made in Bayesian probability theory, that every node in a Bayesian network is conditionally independent of its nondescendents, given its parents. In other words, it is assumed that a node has no bearing on nodes which do not descend from it. This is equivalent to stating that a node is conditionally independent of the entire network, given its Markov blanket. The related Causal Markov condition states that, conditional on the set of all its direct causes, a node is independent of all variables which are not direct causes or direct effects of that node.
 #' @param in_out A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.
 #' @export
-#' @import splines MASS stats dplyr forestplot utils grid magrittr checkmate ggplot2 rlist
+#' @import splines MASS stats forestplot utils grid magrittr checkmate ggplot2 rlist
 #' @keywords models Markov Bayesian Directed Acyclic Graph Population Attributable Fraction
 #' @return  \item{IsMarkovDAG }{Returns a logical TRUE or FALSE whether it is a Markov DAG provided in_out is input as described in the documentation.}
 #' \item{in_out}{The in_out list supplied in the function is returns the same of the input if IsMarkovDAG is returned TRUE. If IsMarkovDAG is returned FALSE the order of the in_out list is updated such that all parent variables come before ancestors in both i_out[[1]] and in_out[[2]]. This corrects any error where variables from a given Markov Bayesiand DAG are input to the package in the incorrect order.}
+#' \item{Reorderd}{Reorderd is FALSE if in_out is left in the same order as input. Reorderd is FALSE if in_out has been reordered so that parents of variables could before descendants.}
 #' @examples \dontrun{
 #' # I don't want you to run this
 #' }
@@ -44,7 +45,7 @@ ListReduce2 <- in_out[[2]]
  if( all(CheckAllTrue) ){
         IsMarkovDAG <- all(CheckAllTrue)
 
-        return(c(IsMarkovDAG=IsMarkovDAG,in_out = in_out))
+        return(list(IsMarkovDAG=IsMarkovDAG,in_out = in_out, Reorderd = FALSE ))
 
   } else if(!all(CheckAllTrue) ){
       # move in_out[[2]][[i]] and corresponding in_out[[1]][[i]] to index below its first occurence in in_out[[1]].
@@ -60,9 +61,12 @@ ListReduce2 <- in_out[[2]]
         VarInLoop2 <- ListReduce2[[1]]
 
         h = grep(VarInLoop2,List2 )
+        # h = grep(paste('^',VarInLoop2,'$',sep=''),List2,perl=TRUE )
 
          # if(  length(which(lapply(List1, function(data_input) grep(VarInLoop2, data_input)) > 0 )) == 0 ){
-         if(  length(which(lapply(List1, function(data_input) grep(VarInLoop2, data_input)) > 0 )) == 0 ){
+        if(  length(which(lapply(List1, function(data_input) grep(VarInLoop2, data_input)) > 0 )) == 0 ){
+        # Check if response variable then move to end of list if response variable
+        # if(  length(which(lapply(List1, function(data_input) grep(paste('^',VarInLoop2,'$',sep=''),data_input,perl=TRUE)) > 0 )) == 0 ){
             # if length() == 0 implies it is a variable which is a not a parent of any variable e.g. response variable
             # Do nothing as let next if statement move other variables before this.
 
@@ -74,14 +78,15 @@ ListReduce2 <- in_out[[2]]
              List1 <- list.insert(List1, length(in_out[[1]]), VarInLoop1 )
              List2 <- list.insert(List2, length(in_out[[2]]), VarInLoop2 )
 
-
         # }else if(h > which(sapply(List1, function(data_input) VarInLoop2 %in% data_input)) ){
         }else if( any(h > which(lapply(List1, function(data_input) grep(VarInLoop2, data_input)) > 0 ) ) ){
+        # }else if( any(h > which(lapply(List1, function(data_input) grep(paste('^',VarInLoop2,'$',sep=''),data_input,perl=TRUE )) > 0 ) ) ){
 
                ToMove1 <- List1[[h]]
                ToMove2 <- List2[[h]]
 
         IndexToInsertAt <- which(lapply(List1, function(data_input) grep(VarInLoop2, data_input)) > 0 )[1]
+        # IndexToInsertAt <- which(lapply(List1, function(data_input) grep(paste('^',VarInLoop2,'$',sep=''),data_input,perl=TRUE )) > 0 )[1]
 
              List1 <- list.remove(List1, h)
              List2 <- list.remove(List2, h)
@@ -189,7 +194,7 @@ CheckAllTrue <- vector(mode = "list", length = length(Boolean) )
                # If statement above not needed since same value returned in both cases but commented out to show logic of code above
                IsMarkovDAG <- all(CheckAllTrue)
 
-              return(c(IsMarkovDAG = IsMarkovDAG,in_out = in_out_updated))
+              return(list(IsMarkovDAG = IsMarkovDAG,in_out = in_out_updated, Reorderd = TRUE))
 ##############################
 ##############################
 ##############################

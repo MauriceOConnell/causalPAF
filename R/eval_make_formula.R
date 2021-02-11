@@ -11,7 +11,7 @@
 #' @param model_list list of a single name of exposure or risk factor or outcome in form of characters.
 #' @param w Column of weights for case control matching listing in same order as patients in data.
 #' @export
-#' @import splines MASS stats dplyr forestplot utils grid magrittr checkmate
+#' @import splines MASS stats forestplot utils grid magrittr checkmate
 #' @keywords models Regression
 #' @return \itemize{
 #' \item{model_listReturn[[1]] }{model list A}
@@ -31,7 +31,7 @@
 #' }
 #' in_vars = c("subeduc","moteduc","fatduc")
 #' outvar = c("phys")
-#' make_formula(in_vars,outvar)
+#' make_formula(in_vars,outvar,addCustom = FALSE, custom = "~ regionnn7 + ")
 eval_make_formula <- function(data,in_out, model_list, w){
 
   count <- 0
@@ -53,7 +53,7 @@ eval_make_formula <- function(data,in_out, model_list, w){
             for(i in 1:length(in_out[[2]]) ){
 
                           column <- (1:length(colnames(data)))[colnames(data) %in% in_out[[2]][i]]
-                          formula_text <- make_formula(in_out[[1]][[i]],in_out[[2]][i])
+                          formula_text <- make_formula(in_out[[1]][[i]],in_out[[2]][i], addCustom = TRUE, custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ")
                           y <- data[,column]
                           if(length(table(y))==2){
                                   theform <- paste("glm(",formula_text,",data=",data_text,",family='binomial',w=",w_text,")",sep='')

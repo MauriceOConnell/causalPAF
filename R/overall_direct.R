@@ -11,7 +11,7 @@
 #' @param response_model_2 is a regression model fitted for the outcome
 #' @param weights A numeric
 #' @export
-#' @import stats dplyr
+#' @import stats
 # #' @importsFrom stats formula predict filter lag
 #' @keywords models Regression
 #' @return \item{directPAF}{direct PAF}

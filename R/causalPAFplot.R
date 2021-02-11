@@ -8,6 +8,7 @@
 #' @param response_model_exposure A model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure and risk factors in the causal Bayesian network. See example in tutorial.
 #' @param in_outArg A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.
 #' @param model_listArg By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.
+#' @param weights Column of weights for case control matching listing in same order as patients in data e.g. weights = strokedata$weights.
 #' @param NumBootstrap The number of bootstraps the user wants to use to calculate confidence intervals for the effect. A minimum of 200 bootstrap repilcations (Efron (2016), Computer Age Statistical Inference, page 162) are recommended to calculate standard errors (for intervals of the form: estimate +/-1.96*(standard error of boostrap estimate. However increasing the number of bootstraps can result in the package taking a long time to run. So the user may make to balance speed with accuracy depedning on which is of more value in context.
 #' @param NumSimulation This is the number of simulatons requested by the user to estimate integrals. The larger the number of simulations the more accurate the results but the longer the code takes to run. Therefore the user may wish to balance speed with accuracy depedning on which is of more value in the specific context of interest. The integrals for continuous variables are estimated using simulation methods.
 #' @param plot plot can be "forestplot" or "bar" are text inputs where:"forestplot" plots a forest plot."bar" plots a bar chart with error bars.
@@ -17,7 +18,8 @@
 #' @param lineCol The colour for the lines in the forest plot is set here in text format. The default is line="darkblue".
 #' @param summaryCol The colour for a summary in the forest plot is set here in text format. The default is summary="royalblue"
 #' @export
-#' @import splines MASS stats dplyr forestplot utils grid magrittr checkmate ggplot2
+#' @importFrom dplyr bind_rows
+#' @import splines MASS stats forestplot utils grid magrittr checkmate ggplot2
 #' @keywords models Regression Population Attributable Fraction
 #' @return Prints a forest plot or a bar chart with error bars of the 5 results for each mediator. The 5 results are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (3)Indirect Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
 #' @examples \dontrun{
@@ -30,10 +32,15 @@ causalPAFplot <- function(dataframe,
                           exposure="phys",
                           mediator=c("subhtn","apob_apoa","whr"),
                           response="case",
-                          response_model_mediators=response_vs_mediator,
-                          response_model_exposure=response_vs_phys,
+                          # response_model_mediators=response_vs_mediator,
+                          # response_model_exposure=response_vs_phys,
+                          response_model_mediators = list(),
+                          response_model_exposure = list(),
                           in_outArg,
                           model_listArg,
+                          # weights = stroke_reduced$weights,
+                          # weights = strokedata$weights,
+                          weights,
                           NumBootstrap,
                           NumSimulation,
                           plot = "bar",
@@ -44,6 +51,43 @@ causalPAFplot <- function(dataframe,
                           lineCol="darkblue",
                           summaryCol="royalblue"
                           ){
+
+# https://www.r-bloggers.com/2019/08/no-visible-binding-for-global-variable/
+# MOC Note: Try this to get rid of error: "causalPAFplot: no visible binding for global variable..." and "Undefined global functions or variables:..."
+# Bootstrap <- NULL
+# globalVariables(c("Bootstrap"))
+
+
+# checkMarkovDAG(in_outArg)[1]
+# checkMarkovDAG(in_outArg)[2]
+
+# response_model_exposure <-
+
+########################
+#########################
+# to be called in causalPAFplot.R
+#########################
+  if(length(response_model_exposure) == 0 ){
+
+        response_model_exposure_text <- response_vs_exposure(data = dataframe ,
+                                                          exposure=exposure,
+                                                          response=response,
+                                                          # in_out = in_out, # needs to be in_out = in_outArg,
+                                                          in_out = in_outArg,
+                                                          w = weights ) ## CHANGE TO MAKE: NEED TO UPDATE causalPAFplot to link weights to bootstrap$weights below as not defined properly
+# In meantime not running function use this...then delete
+# response_model_exposure_text <- to_execute
+# NOTE this eval() will create the model variable named response_model_exposure_text
+eval(parse(text = response_model_exposure_text ) )
+
+response_model_exposure <-response_model_exposure_text
+########################
+########################
+########################
+
+  }
+# else{ response_model_exposure IS DEFINED BY THE USER IN THE FUNCTION}
+
 
 
 # Controls = dataframe[dataframe$response_name == 0, ]
@@ -63,6 +107,7 @@ for(i in 1:length(mediator)){
 model_list_use <- vector(mode = "list", length = length(in_outArg[[2]]) )
 model_list_eval <- vector(mode = "list", length = length(in_outArg[[2]]) )
 
+
 for ( v in 1:NumBootstrap ){
 
 
@@ -70,9 +115,13 @@ for ( v in 1:NumBootstrap ){
 
   BootstrapCases = as.data.frame( Cases[sample(nrow(Cases), replace = T), ] )
 
+  # MOC NOTE: need to add in this line "Bootstrap <- as.data.frame(dplyr::bind_rows(BootstrapCases, BootstrapControls) )"
+  # with "<-" just before it is defined globally with "<<-" in order to remove error with checking CausalPAF package
+  # i.e. remove error "no visible binding for '<<-' assignment to "
+  Bootstrap <- as.data.frame(dplyr::bind_rows(BootstrapCases, BootstrapControls) )
   # Bootstrap = as.data.frame(bind_rows(BootstrapCases, BootstrapControls) )
   # TRY GLOBAL NAMING OF BOOTSTRAP
-  Bootstrap <<- as.data.frame(bind_rows(BootstrapCases, BootstrapControls) )
+  Bootstrap <<- as.data.frame(dplyr::bind_rows(BootstrapCases, BootstrapControls) )
 
 
 # If user has not fitted their own model_listArg then fit as follows
@@ -225,7 +274,7 @@ upper95CI <- list()
                                 is.summary=c(TRUE,rep(FALSE,5)),
                                 clip=c(min(results_mediator_table[[Nmed]]) -0.1,max(results_mediator_table[[Nmed]]) +0.1),
                                 xlog=FALSE,
-                                col=fpColors(box= boxCol,line = lineCol, summary = summaryCol))
+                                col=fpColors(box= boxCol,lines = lineCol, summary = summaryCol))
          }
      } else if(plot == "bar"){
                 # if(errorbar == "errorbar" ){

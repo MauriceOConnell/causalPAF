@@ -9,10 +9,11 @@ causalPAFplot(
   exposure = "phys",
   mediator = c("subhtn", "apob_apoa", "whr"),
   response = "case",
-  response_model_mediators = response_vs_mediator,
-  response_model_exposure = response_vs_phys,
+  response_model_mediators = list(),
+  response_model_exposure = list(),
   in_outArg,
   model_listArg,
+  weights,
   NumBootstrap,
   NumSimulation,
   plot = "bar",
@@ -39,6 +40,8 @@ causalPAFplot(
 \item{in_outArg}{A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.}
 
 \item{model_listArg}{By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.}
+
+\item{weights}{Column of weights for case control matching listing in same order as patients in data e.g. weights = strokedata$weights.}
 
 \item{NumBootstrap}{The number of bootstraps the user wants to use to calculate confidence intervals for the effect. A minimum of 200 bootstrap repilcations (Efron (2016), Computer Age Statistical Inference, page 162) are recommended to calculate standard errors (for intervals of the form: estimate +/-1.96*(standard error of boostrap estimate. However increasing the number of bootstraps can result in the package taking a long time to run. So the user may make to balance speed with accuracy depedning on which is of more value in context.}
 

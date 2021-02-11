@@ -4,12 +4,21 @@
 \alias{make_formula}
 \title{Makes Formula for regression of exposure or risk factor or outcome on its parents in a causal Bayesian network directed acyclic graph.}
 \usage{
-make_formula(in_vars, outvar)
+make_formula(
+  in_vars,
+  outvar,
+  addCustom = FALSE,
+  custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
+)
 }
 \arguments{
 \item{in_vars}{a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome}
 
 \item{outvar}{list of a single name of exposure or risk factor or outcome in form of characters}
+
+\item{addCustom}{is a logical which is TRUE if a custom regression is to be added in or FALSE otherwise. The customised part is defined in the parameter "custom".}
+
+\item{custom}{custom must start and end as follows: "~  + " with custom values between ~ and +. Custom allows customised input into regresssion not stated already e.g. allow for interaction of variables not listed yet e.g. "~ regionnn7 x ns(eage,df=5)+esex x ns(eage,df=5) + "}
 }
 \value{
 \item{result }{result}
