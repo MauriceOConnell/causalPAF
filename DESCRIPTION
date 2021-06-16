@@ -20,7 +20,11 @@ Imports:
  magrittr,
  checkmate,
  ggplot2,
- rlist
+ rlist,
+ dagitty,
+ ggdag,
+ reshape2,
+ gridExtra
 Depends:
 Suggests:
  knitr

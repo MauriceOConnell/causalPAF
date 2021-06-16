@@ -19,7 +19,10 @@
 #' in_vars = c("subeduc","moteduc","fatduc")
 #' outvar = c("phys")
 #' make_formula(in_vars,outvar)
-make_formula <- function(in_vars,outvar, addCustom = FALSE, custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "){
+make_formula <- function(in_vars,outvar, addCustom = FALSE, custom = ""){
+
+  # changed from this
+  # custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
 
   # # Before update (which was working)
   # result <- paste(outvar,"~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ",in_vars[1])
@@ -37,7 +40,9 @@ make_formula <- function(in_vars,outvar, addCustom = FALSE, custom = "~ regionnn
   # Need custom variable since e.g. "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + " is specific to our example and allows interaction
   if(addCustom){
         # result <- paste(outvar,"~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ",in_vars[1])
-        result <- paste(outvar, custom, in_vars[1])
+        # changed from this
+        # result <- paste(outvar, custom, in_vars[1])
+        result <- paste(outvar,"~ ", in_vars[1],"+ ", custom, sep='')
   }else{
         # result <- paste(outvar,"~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ",in_vars[1])
         result <- paste(outvar,"~ ",in_vars[1])

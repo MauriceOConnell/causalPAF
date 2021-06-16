@@ -4,7 +4,7 @@
 \alias{eval_make_formula}
 \title{Evaluates and Makes Formula for regression of exposure or risk factor or outcome on its parents in a causal Bayesian network directed acyclic graph.}
 \usage{
-eval_make_formula(data, in_out, model_list, w)
+eval_make_formula(data, in_out, model_list, w, addCustom = FALSE, custom = "")
 }
 \arguments{
 \item{data}{A wide format data containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.}
@@ -14,6 +14,10 @@ eval_make_formula(data, in_out, model_list, w)
 \item{model_list}{list of a single name of exposure or risk factor or outcome in form of characters.}
 
 \item{w}{Column of weights for case control matching listing in same order as patients in data.}
+
+\item{addCustom}{Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.}
+
+\item{custom}{text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interactin terms. See tutorial for examples.}
 }
 \value{
 \itemize{

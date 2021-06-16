@@ -19,6 +19,13 @@
 #' # I don't want you to run this
 #' }
 do_sim_sequentialPAF <- function(colnum,current_mat, model){
+
+        # browser()
+
+        # colnum <- col_list[i]
+        # current_mat
+        # model <- model_list[[i]]
+
         ## polr
         if(names(model)[2]=='zeta'){
 
@@ -26,21 +33,21 @@ do_sim_sequentialPAF <- function(colnum,current_mat, model){
                 mynames <- colnames(probs)
                 simulation <- apply(probs,1,function(x){base::sample(mynames,size=1,prob=x)})
                 return(simulation)
-        }
-        # glm
-        if(grep("glm",model$call)){
+        } else if(  isTRUE(grep("glm",model$call) == 1) ){  # glm
 
                 probs <- predict(model,newdata=current_mat,type="response")
                 if(is.null(levels(current_mat[,colnum]))) return(apply(cbind(1-probs,probs),1,function(x){base::sample(c(0,1),size=1,prob=x)}))
                 simulation <-  apply(cbind(1-probs,probs),1,function(x){base::sample(levels(current_mat[,colnum]),size=1,prob=x)})
                 return(simulation)
-        }
-        # regression
-        if(grep("lm",model$call)){
+        } else if( isTRUE( grep("lm",model$call) == 1) ){ # regression
 
                 pred <- predict(model,newdata=current_mat,type="response")
                 s_d <- sd(model$residuals)
                 simulation <-  pred + rnorm(length(pred),mean=0,sd=s_d)
                 return(simulation)
+        } else{
+
+                stop("Error in do_sim_sequentialPAF() function. Only glm, lm or polr models can be modelled.")
         }
+
 }

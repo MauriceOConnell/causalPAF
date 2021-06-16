@@ -4,12 +4,7 @@
 \alias{make_formula}
 \title{Makes Formula for regression of exposure or risk factor or outcome on its parents in a causal Bayesian network directed acyclic graph.}
 \usage{
-make_formula(
-  in_vars,
-  outvar,
-  addCustom = FALSE,
-  custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
-)
+make_formula(in_vars, outvar, addCustom = FALSE, custom = "")
 }
 \arguments{
 \item{in_vars}{a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome}

@@ -10,6 +10,8 @@
 #' @param in_out A list of length 2. The first list contains the ``in_vars'' which is a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters.
 #' @param model_list list of a single name of exposure or risk factor or outcome in form of characters.
 #' @param w Column of weights for case control matching listing in same order as patients in data.
+#' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.
+#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interactin terms. See tutorial for examples.
 #' @export
 #' @import splines MASS stats forestplot utils grid magrittr checkmate
 #' @keywords models Regression
@@ -32,8 +34,8 @@
 #' in_vars = c("subeduc","moteduc","fatduc")
 #' outvar = c("phys")
 #' make_formula(in_vars,outvar,addCustom = FALSE, custom = "~ regionnn7 + ")
-eval_make_formula <- function(data,in_out, model_list, w){
-
+eval_make_formula <- function(data,in_out, model_list, w, addCustom = FALSE, custom = ""){
+# addCustom = TRUE, custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
   count <- 0
   if( ( length(model_list) == 0 ) & (count == 0) ){
 
@@ -53,7 +55,8 @@ eval_make_formula <- function(data,in_out, model_list, w){
             for(i in 1:length(in_out[[2]]) ){
 
                           column <- (1:length(colnames(data)))[colnames(data) %in% in_out[[2]][i]]
-                          formula_text <- make_formula(in_out[[1]][[i]],in_out[[2]][i], addCustom = TRUE, custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ")
+                          # formula_text <- make_formula(in_out[[1]][[i]],in_out[[2]][i], addCustom = TRUE, custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ")
+                          formula_text <- make_formula(in_out[[1]][[i]],in_out[[2]][i], addCustom , custom )
                           y <- data[,column]
                           if(length(table(y))==2){
                                   theform <- paste("glm(",formula_text,",data=",data_text,",family='binomial',w=",w_text,")",sep='')

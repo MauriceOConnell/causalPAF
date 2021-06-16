@@ -6,19 +6,22 @@
 #' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
 #' @param response_model_mediators A model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.
 #' @param response_model_exposure A model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure and risk factors in the causal Bayesian network. See example in tutorial.
-#' @param in_outArg A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.
-#' @param model_listArg By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.
-#' @param weights Column of weights for case control matching listing in same order as patients in data e.g. weights = strokedata$weights.
-#' @param NumBootstrap The number of bootstraps the user wants to use to calculate confidence intervals for the effect. A minimum of 200 bootstrap repilcations (Efron (2016), Computer Age Statistical Inference, page 162) are recommended to calculate standard errors (for intervals of the form: estimate +/-1.96*(standard error of boostrap estimate. However increasing the number of bootstraps can result in the package taking a long time to run. So the user may make to balance speed with accuracy depedning on which is of more value in context.
-#' @param NumSimulation This is the number of simulatons requested by the user to estimate integrals. The larger the number of simulations the more accurate the results but the longer the code takes to run. Therefore the user may wish to balance speed with accuracy depedning on which is of more value in the specific context of interest. The integrals for continuous variables are estimated using simulation methods.
-#' @param plot plot can be "forestplot" or "bar" are text inputs where:"forestplot" plots a forest plot."bar" plots a bar chart with error bars.
+#' @param in_outArg A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list contains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.
+#' @param Splines_outlist A list defined of same size and order of variables as defined in in_outArg[[2]]. If splines are to be used for variables listed in in_outArg[[2]], then the splines should be defined in the same order as variables appear in in_outArg[[2]]. It is necessary to list variables in in_outArg[[2]] without splines if no spline is to be applied. Should be input as list() if no splines.
+#' @param model_listArg is a list of models fitted for each of the variables in in_out$outlist based on its parents given in in_out$inlist. By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.
+#' @param weights Column of weights for case control matching listed in the same order as the patients in the data e.g. weights = strokedata$weights.
+#' @param NumBootstrap The number of bootstraps the user wants to use to calculate confidence intervals for the effect. A minimum of 200 bootstrap repilcations (Efron (2016), Computer Age Statistical Inference, page 162) are recommended to calculate standard errors (for intervals of the form: estimate +/-1.96*(standard error of boostrap estimate. However increasing the number of bootstraps can result in the package taking a long time to run. So the user may decide to balance speed with accuracy depedning on which is of more value in the specific context.
+#' @param NumSimulation This is the number of simulatons requested by the user to estimate integrals. The larger the number of simulations the more accurate the results but the longer the code takes to run. Therefore the user may wish to balance speed with accuracy depending on which is of more value in the specific context of interest. The integrals for continuous variables are estimated using simulation methods.
+#' @param plot plot can be text inputs "forestplot" or "bar" where:"forestplot" plots a forest plot."bar" plots a bar chart with error bars.
 #' @param fill The colour for the fill in the bar chart is set here in text format. The default is fill= "skyblue".
-#' @param colour The colour for the error bar in teh bar chart is set here in text format. The default is colour = "orange".
+#' @param colour The colour for the error bar in the bar chart is set here in text format. The default is colour = "orange".
 #' @param boxCol The colour for the box in the forest plot is set here in text format. The default is box = "royalblue".
-#' @param lineCol The colour for the lines in the forest plot is set here in text format. The default is line="darkblue".
-#' @param summaryCol The colour for a summary in the forest plot is set here in text format. The default is summary="royalblue"
+#' @param lineCol The colour for the lines in the forest plot is set here in text format. The default is line = "darkblue".
+#' @param summaryCol The colour for a summary in the forest plot is set here in text format. The default is summary = "royalblue"
+#' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.
+#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interactin terms. See tutorial for examples.
 #' @export
-#' @importFrom dplyr bind_rows
+#' @importFrom dplyr bind_rows mutate
 #' @import splines MASS stats forestplot utils grid magrittr checkmate ggplot2
 #' @keywords models Regression Population Attributable Fraction
 #' @return Prints a forest plot or a bar chart with error bars of the 5 results for each mediator. The 5 results are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (3)Indirect Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
@@ -32,25 +35,62 @@ causalPAFplot <- function(dataframe,
                           exposure="phys",
                           mediator=c("subhtn","apob_apoa","whr"),
                           response="case",
-                          # response_model_mediators=response_vs_mediator,
+                          # response_model_mediators=response_vs_mediator, # WILL CAUSE ERROR IF CALL = response_vs_mediator SINCE response_vs_mediator IS A FUNCTION AND ASSIGNS IT TO THE FUNCTION
                           # response_model_exposure=response_vs_phys,
                           response_model_mediators = list(),
                           response_model_exposure = list(),
                           in_outArg,
+                          Splines_outlist = list(),   # needs to be input as list() if no splines. Assumes exposure is not written in spline format
                           model_listArg,
-                          # weights = stroke_reduced$weights,
                           # weights = strokedata$weights,
-                          weights,
+                          weights = 1,  # weights = stroke_reduced$weights
+                          # prevalence ADD IN
+                          # CHECK IS WEIGHT HARD CODED
                           NumBootstrap,
                           NumSimulation,
                           plot = "bar",
                           # errorbar = "errorbar",
-                          fill= "skyblue",
+                          fill = "skyblue",
                           colour="orange",
                           boxCol="royalblue",
                           lineCol="darkblue",
-                          summaryCol="royalblue"
+                          summaryCol="royalblue",
+                          addCustom = FALSE,
+                          custom = ""
                           ){
+
+
+                          # dataframe = stroke_reduced
+                          # exposure="phys"
+                          # mediator=c("subhtn","apob_apoa","whr")
+                          # response="case"
+                          # # response_model_mediators = response_vs_mediator # THIS CAUSES ERROR SINCE A FUNCTION IS called response_vs_mediator AND IT ASSIGNS THE FUNCTION RATHER THAN THE MEDIATOR
+                          # response_model_mediators = list()
+                          # response_model_exposure = list()
+                          # in_outArg = in_out
+                          # Splines_outlist = Splines_outlist  # needs to be input as list() if no splines. Assumes if appears as spline once needs to appear as a spline in all occurences
+                          # model_listArg = list()
+                          # weights = stroke_reduced$weights
+                          # NumBootstrap = 2
+                          # NumSimulation = 2
+                          # plot = "bar"
+                          # # errorbar = "NA"
+                          # fill= "skyblue"
+                          # colour="orange"
+                          # boxCol="royalblue"
+                          # lineCol="darkblue"
+                          # summaryCol="royalblue"
+                          # addCustom = TRUE
+                          # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
+
+## At moment, weigths are populated in the dataframe before calling function causalPAFplot.r. The default is weights = 1 which is not a case-control data format but rather a cohort weighting by default.
+## CHANGE TO MAKE: NEED TO UPDATE causalPAFplot to link weights to bootstrap$weights below as not defined properly
+## CHANGE TO MAKE: Build in so response_model_mediators can be built into causalPAFplot similar to how response_model_exposure has been built in
+
+
+dataframe <- mutate(dataframe, weightsAppendColumnToData = weights)
+
+# addCustom = TRUE, custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
 
 # https://www.r-bloggers.com/2019/08/no-visible-binding-for-global-variable/
 # MOC Note: Try this to get rid of error: "causalPAFplot: no visible binding for global variable..." and "Undefined global functions or variables:..."
@@ -61,34 +101,68 @@ causalPAFplot <- function(dataframe,
 # checkMarkovDAG(in_outArg)[1]
 # checkMarkovDAG(in_outArg)[2]
 
-# response_model_exposure <-
+##############################################
+##############################################
 
-########################
-#########################
-# to be called in causalPAFplot.R
-#########################
-  if(length(response_model_exposure) == 0 ){
+# pointEstimate$results_mediatorPointEstimate
+# pointEstimate$regressionExposure_listReturn
+# pointEstimate$regressionMediator_listReturn
 
-        response_model_exposure_text <- response_vs_exposure(data = dataframe ,
-                                                          exposure=exposure,
-                                                          response=response,
-                                                          # in_out = in_out, # needs to be in_out = in_outArg,
-                                                          in_out = in_outArg,
-                                                          w = weights ) ## CHANGE TO MAKE: NEED TO UPDATE causalPAFplot to link weights to bootstrap$weights below as not defined properly
-# In meantime not running function use this...then delete
-# response_model_exposure_text <- to_execute
-# NOTE this eval() will create the model variable named response_model_exposure_text
-eval(parse(text = response_model_exposure_text ) )
+results_mediatorPointEstimate <- pointEstimate(dataframe = dataframe,
+                                               exposure = exposure,
+                                               mediator = mediator,
+                                               response = response,
+                                               response_model_mediators = response_model_mediators,
+                                               response_model_exposure = response_model_exposure,
+                                               in_outArg = in_outArg,
+                                               Splines_outlist = Splines_outlist,  # needs to be input as list() if no splines. Assumes if appears as spline once needs to appear as a spline in all occurences
+                                               splinesDefinedIn_in_outDAG = TRUE,
+                                               model_listArg = model_listArg,
+                                               weights = weights,
+                                               NumSimulation = NumSimulation,
+                                               addCustom = addCustom,
+                                               custom = custom # need to update make_formula() so that it runs without needing ~ first
+                                               )
+#### OUTPUT FROM pointEstimate()
+# my_listPointEstimate <- list("results_mediatorPointEstimate" = results_mediatorPointEstimate, "mediators" = mediator, "response_vs_physPointEstimate" = response_vs_physPointEstimate , "response_vs_mediatorPointEstimate" = response_vs_mediatorPointEstimate )
 
-response_model_exposure <-response_model_exposure_text
-########################
-########################
-########################
+# results_mediatorPointEstimate$results_mediatorPointEstimate
+# results_mediatorPointEstimate$mediators
+# results_mediatorPointEstimate$response_vs_physPointEstimate
+# results_mediatorPointEstimate$response_vs_mediatorPointEstimate
 
-  }
-# else{ response_model_exposure IS DEFINED BY THE USER IN THE FUNCTION}
+###############################################
+###############################################
 
+# ########################
+# #########################
+# # to be called in causalPAFplot.R
+# #########################
+#   if(length(response_model_exposure) == 0 ){
+#
+#         response_model_exposure_text <- response_vs_exposure(data = dataframe ,
+#                                                           exposure=exposure,
+#                                                           response=response,
+#                                                           # in_out = in_out, # needs to be in_out = in_outArg,
+#                                                           in_out = in_outArg,
+#                                                           w = weights,
+#                                                           Splines_outlist = Splines_outlist) ## CHANGE TO MAKE: NEED TO UPDATE causalPAFplot to link weights to bootstrap$weights below as not defined properly
+# # In meantime not running function use this...then delete
+# # response_model_exposure_text <- to_execute
+# # NOTE this eval() will create the model variable named response_model_exposure_text
+# eval(parse(text = response_model_exposure_text ) )
+#
+# response_model_exposure <-response_model_exposure_text
+# ########################
+# ########################
+# ########################
+#
+#   }
+# # else{ response_model_exposure IS DEFINED BY THE USER IN THE FUNCTION}
 
+response_model_exposure <- results_mediatorPointEstimate$response_vs_physPointEstimate
+
+response_model_mediators <- results_mediatorPointEstimate$response_vs_mediatorPointEstimate
 
 # Controls = dataframe[dataframe$response_name == 0, ]
 Controls = dataframe[ dataframe[ ,grep(paste('^',response,'$',sep=''),colnames(dataframe),perl=TRUE)] == 0, ]
@@ -107,6 +181,7 @@ for(i in 1:length(mediator)){
 model_list_use <- vector(mode = "list", length = length(in_outArg[[2]]) )
 model_list_eval <- vector(mode = "list", length = length(in_outArg[[2]]) )
 
+response_vs_mediatorBootstrap <- list()
 
 for ( v in 1:NumBootstrap ){
 
@@ -128,7 +203,8 @@ for ( v in 1:NumBootstrap ){
 if( length(model_listArg) == 0 ){
       model_list_input <- list()
       # model_list_use <- eval_make_formula(data = Bootstrap, in_out=in_outArg,model_list=model_listArg, w=Bootstrap$weights)
-      model_list_use <- eval_make_formula(data = Bootstrap, in_out=in_outArg,model_list=model_list_input, w=Bootstrap$weights)
+      # model_list_use <- eval_make_formula(data = Bootstrap, in_out=in_outArg,model_list=model_list_input, w=Bootstrap$weights, addCustom, custom)
+      model_list_use <- eval_make_formula(data = Bootstrap, in_out=in_outArg,model_list=model_list_input, w=Bootstrap$weightsAppendColumnToData, addCustom, custom)
       #   # TRY TO GET IN FUNCTION ENVIRONMENT E.G. model$terms <- eval(model$call$formula)
     #   # model$terms <- eval(model$call$formula)
     #   model_list_use[[1]]$terms <- eval(model_list_use[[1]]$call$formula)
@@ -172,10 +248,20 @@ if( length(model_listArg) == 0 ){
 
 
 
-response_vs_mediator <- update(response_model_mediators, data = Bootstrap, weights = Bootstrap$weights )
+# # response_vs_mediator <- update(response_model_mediators, data = Bootstrap, weights = Bootstrap$weights )
+#########
+## response_vs_mediator CAN BE MORE THAN 1 DIMENSIONAL IF MORE THAN 1 MEDIATOR OF INTEREST. SO THIS NEEDS TO BE MOVED WITHIN FOR LOOP FOR med i.e. move it below
+#########
+# response_vs_mediator <- update(response_model_mediators, data = Bootstrap, weights = Bootstrap$weightsAppendColumnToData )
 
-response_vs_phys <- update(response_model_exposure, data = Bootstrap, weights = Bootstrap$weights )
-
+# response_vs_phys <- update(response_model_exposure, data = Bootstrap, weights = Bootstrap$weights )
+##############
+## Keeping as one dimensional so leaving here. MIGHT NEED TO BE UPDATED IF WE WANT MORE THAN 1 EXPOSURE RUN AT A TIME. IN THIS CASE IT WOULD NEED TO BE MOVED BELOW INTO THE FOR LOOP FOR med
+##############
+## NB NB NB NBNB NB NB NB  NB NB NB NB  NB NB NB NB
+###### NOTE USED [[1]] [[1]] [[1]] [[1]] [[1]] AS ASSUMING ONLY 1 EXPOSURE
+response_vs_phys <- update(response_model_exposure[[1]], data = Bootstrap, weights = Bootstrap$weightsAppendColumnToData )
+## NB NB NB NBNB NB NB NB  NB NB NB NB  NB NB NB NB
 
 
   results_mediator_simulationStore <- list()
@@ -186,8 +272,10 @@ response_vs_phys <- update(response_model_exposure, data = Bootstrap, weights = 
 
   for(med in 1:length(results_mediator) ){
 
-          for(i in 1:NumSimulation){
+    # response_vs_mediator <- update(response_model_mediators, data = Bootstrap, weights = Bootstrap$weights )
+    response_vs_mediatorBootstrap[[med]] <- update(response_model_mediators[[med]], data = Bootstrap, weights = Bootstrap$weightsAppendColumnToData )
 
+          for(i in 1:NumSimulation){
 
               results_mediator_simulationStore[[med]][i,1:3] <- indirect_PAF_Sjolander_onesimulation(
                 data_frame = Bootstrap,
@@ -195,9 +283,10 @@ response_vs_phys <- update(response_model_exposure, data = Bootstrap, weights = 
                 mediator=mediator[med],
                 response = response, # is it an issue that response = response?
                 mediator_model = mediator_model, # is it an issue that mediator_model = mediator_model?
-                response_model=response_vs_mediator,
+                response_model=response_vs_mediatorBootstrap[[med]],
                 response_model_2=response_vs_phys,
-                weights= Bootstrap$weights)
+                #weights= Bootstrap$weights
+                weights= Bootstrap$weightsAppendColumnToData)
 
               results_mediator_simulationStore[[med]][i,4] <- path_specific_onesimulation(
                 data_frame = Bootstrap,
@@ -205,9 +294,10 @@ response_vs_phys <- update(response_model_exposure, data = Bootstrap, weights = 
                 mediator = mediator[med],
                 response = response, # is it an issue that response = response?
                 mediator_model = mediator_model, # is it an issue that mediator_model = mediator_model?
-                response_model=response_vs_mediator,
+                response_model=response_vs_mediatorBootstrap[[med]],
                 response_model_2=response_vs_phys,
-                weights= Bootstrap$weights)
+                # weights= Bootstrap$weights
+                weights= Bootstrap$weightsAppendColumnToData)
 
               results_mediator_simulationStore[[med]][i,5] <- overall_direct(
                 data_frame = Bootstrap,
@@ -215,9 +305,10 @@ response_vs_phys <- update(response_model_exposure, data = Bootstrap, weights = 
                 mediator = mediator[med],
                 response = response, # is it an issue that response = response?
                 mediator_model = mediator_model, # is it an issue that mediator_model = mediator_model?
-                response_model=response_vs_mediator,
+                response_model=response_vs_mediatorBootstrap[[med]],
                 response_model_2=response_vs_phys,
-                weights= Bootstrap$weights)
+                # weights= Bootstrap$weights
+                weights= Bootstrap$weightsAppendColumnToData)
 
               flush.console()
               print(i)
@@ -231,16 +322,64 @@ response_vs_phys <- update(response_model_exposure, data = Bootstrap, weights = 
 }
 
 
+#######################################
+#######################################
+### call pointEstimate() function
+#######################################
+#######################################
+
+            # pointEstimate(dataframe = stroke_reduced,
+            #               exposure="phys",
+            #               mediator=c("subhtn","apob_apoa","whr"),
+            #               response="case",
+            #               response_model_mediators = list(),
+            #               response_model_exposure = list(),
+            #               in_outArg = in_out,
+            #               Splines_outlist = Splines_outlist,  # needs to be input as list() if no splines. Assumes if appears as spline once needs to appear as a spline in all occurences
+            #               splinesDefinedIn_in_outDAG = TRUE,
+            #               model_listArg = list(),
+            #               weights = stroke_reduced$weights,
+            #               NumSimulation = 2,
+            #               plot = "bar",
+            #               fill= "skyblue",
+            #               colour="orange",
+            #               boxCol="royalblue",
+            #               lineCol="darkblue",
+            #               summaryCol="royalblue",
+            #               addCustom = TRUE,
+            #               custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" # need to update make_formula() so that it runs without needing ~ first
+            #               )
+
+############################
+############################
+
+############################################################
+############################################################
+############################################################
+
 results_mediator_table <- list()
 for(i in 1:length(mediator)){
     results_mediator_table[[i]] <- matrix(nrow = 3,ncol=5)
-    results_mediator_table[[i]][1,] <- apply(results_mediator[[i]],2,mean)
+    #########
+    ## apply(results_mediator[[i]],2,mean) THIS IS BAGGING AND WE DON NOT WANT THE BOOTSTRAPPED MEAN BUT WE WANT THE POINT ESTIMATE WITHOUT BOOTSTRAPING FROM THE ORGINAL DATA
+    #########
+    # results_mediator_table[[i]][1,] <- apply(results_mediator[[i]],2,mean)
+    ## results_mediatorPointEstimate IS THE POINT ESTIMATE FROM THE ORINGAL UNBOOTSTRAPPED DATA GOT FROM pointEstimate() FUNCTION
+    results_mediator_table[[i]][1,] <- results_mediatorPointEstimate$results_mediatorPointEstimate[[i]]
+    # THESE ARE THE BOOTSTRAPPED CONFIDENCE INTERVALS AND WE WANT TO BOOTSTRAP FOR THE CONFIDENE INTERVALS.
     results_mediator_table[[i]][2,] <- apply(results_mediator[[i]],2,mean) - 1.96*apply(results_mediator[[i]],2,sd)
     results_mediator_table[[i]][3,] <- apply(results_mediator[[i]],2,mean) + 1.96*apply(results_mediator[[i]],2,sd)
     colnames(results_mediator_table[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
     rownames(results_mediator_table[[i]]) <- c("Mean", "Lower 95% C.I.","Upper 95% C.I.")
     results_mediator_table[[i]]
 }
+
+############################################################
+############################################################
+############################################################
+
+
+
 
 plotList <- list()
 cochrane_from_rmeta <- list()
@@ -362,6 +501,12 @@ upper95CI <- list()
      } else{ print("Enter value for plot argument.") }
 
 
-     plotList
+
+     # plotList
+     #
+     # results_mediator_table
+
+     my_list <- list("plot" = plotList, "mediators" = mediator, "table" = results_mediator_table )
+     return(my_list)
 
 }
