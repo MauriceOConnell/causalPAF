@@ -19,6 +19,30 @@
 make_DAG <- function(in_outDAG , exposure, response, mediator, Splines_outlist_Var, splinesDefinedIn_in_outDAG, addCustomExposureAdjustmentSet = FALSE, customExposureAdjustmentSet, addCustomMediatorAdjustmentSet = FALSE, customMediatorAdjustmentSet ){
 
 
+  # ggproto <- ggplot2::ggproto
+
+######################
+######################
+### NEED TO RUN dagitty on in_out[[2]] and see if all have adjustment sets
+######################
+######################
+
+# MAYBE CREATE A FUNCTION AND CALL IT WITHIN THIS FUNCTION USING dagified
+
+# isAdjustmentSet(dagified, in_outDAG_SplinesRemoved[[1]][[1]], exposure = in_outDAG_SplinesRemoved[[1]][[1]], outcome = in_outDAG_SplinesRemoved[[2]][[1]])
+
+# adjustmentSets(dagified, exposure = in_outDAG_SplinesRemoved[[1]][[1]], outcome = in_outDAG_SplinesRemoved[[2]][[1]] , type = "canonical", effect = "total")
+#
+# adjustmentSets(dagified, exposure = in_outDAG_SplinesRemoved[[1]][[1]][1], outcome = in_outDAG_SplinesRemoved[[2]][[1]] , type = "canonical", effect = "total")
+#
+# adjustmentSets(dagified, exposure = in_outDAG_SplinesRemoved[[1]][[1]][2], outcome = in_outDAG_SplinesRemoved[[2]][[1]] , type = "canonical", effect = "total")
+#
+# adjustmentSets(dagified, exposure = in_outDAG_SplinesRemoved[[1]][[1]][3], outcome = in_outDAG_SplinesRemoved[[2]][[1]] , type = "canonical", effect = "total")
+
+#######################
+#######################
+
+
 if( (length(splinesDefinedIn_in_outDAG) == 0) || (length(Splines_outlist_Var) == 0) ){
 
   stop("Please ensure the logical variable splinesDefinedIn_in_outDAG and list variable Splines_outlist_Var are defined. splinesDefinedIn_in_outDAG is a logical TRUE or FALSE indicating whether the user has defined splines in the causal DAG, in_out, if TRUE. If splinesDefinedIn_in_outDAG is set to FALSE and splines are defined in Splines_outlist_Var, then this informs the package to populate the in_out DAG with splines listed in Splines_outlist_Var.
@@ -325,8 +349,8 @@ for( i in 1:length( in_outDAG_SplinesRemoved[[2]] ) ){
     # https://ggdag.malco.io
     # quartz()
     #### TRY AND ADD IN CODE TO HAVE PARENTS IN LEFT AND TIDY UP GRAPH
-    CausalDagPlot <- ggdag(tidy_ggdag) +
-      theme_dag()
+    #CausalDagPlot <- ggdag::ggdag(tidy_ggdag) + theme_dag()
+    #CausalDagPlot <- ggdag(tidy_ggdag) + theme_dag()
 
   #  quartz()
   #   ggdag_adjustment_set(tidy_ggdag,exposure = exposure, outcome = response, node_size = 14) +
@@ -349,6 +373,369 @@ for( i in 1:length( in_outDAG_SplinesRemoved[[2]] ) ){
 
     }
 
+#################################################################################################################
+##############################################
+## ADD IN CHECKS REQUESTED BY John Ferguson
+##############################################
+#############################################
+
+Full_MediatorAdjustmentSet <- vector(mode = "list", length = length( mediator ) )
+Subset_MediatorAdjustmentSet <- vector(mode = "list", length = length( mediator ) )
+
+updateMediatorAdjustSetCanon_noResponse <- vector(mode = "list", length = length( mediator ) )
+updateMediatorAdjustSetCanon_noResponse_All <- vector(mode = "list", length = length( mediator ) )
+
+indexMediator  <- which(lapply(in_outDAG_SplinesRemoved[[2]] , function(data_input) data_input %in% mediator )  > 0 )
+
+in_outDAG_SplinesRemoved_IndexUpdated <- vector(mode = "list", length = length( mediator ) )
+
+mediatorAdjustmentSetAll  <- vector(mode = "list", length = length(mediator) )
+
+Full_MediatorAdjustmentSet_All <- vector(mode = "list", length = length( mediator ) )
+Subset_MediatorAdjustmentSet_ALL <- vector(mode = "list", length = length( mediator ) )
+
+
+# # The elements of setdiff(x,y) are those elements in x but not in y.
+# # setdiff( c("phys", "ahei3tert" , "nevfcur", "alcohfreqwk","global_stress2"), exposure )
+# # setdiff( c( "ahei3tert" , "nevfcur", "alcohfreqwk","global_stress2"), exposure )
+# setdiff( in_outDAG_SplinesRemoved[[1]][[indexMediator[i] ]], exposure)
+
+#######
+## dagitty
+## adjustmentSets()
+## For type="canonical", a single adjustment set is returned that consists of all (possible) ancestors of exposures and outcomes, minus (possible) descendants of nodes on proper causal paths. This canonical adjustment set is always valid if any valid set exists at all.
+#######
+
+###########
+###########
+### Testing
+# create test cases for each if else loop below
+###########
+###########
+## Scenario 1: when mediator[1] is "subhtn" and the in_outDAG_SplinesRemoved[[1]][[indexMediator[1] ]] is set incorrectly as follows:
+### It should be as follows:
+### in_outDAG_SplinesRemoved[[1]][[indexMediator[1] ]] <- c("subeduc" , "moteduc" , "fatduc" , "phys" , "ahei3tert", "nevfcur", "alcohfreqwk","global_stress2")
+### But is changed to this
+# in_outDAG_SplinesRemoved[[1]][[indexMediator[1] ]] <- c("subeduc" , "phys" )
+
+## Scenario 2: Same as scenario 1 but skip onto next part of loop.
+## Scenario 3: Same as scenario 1 but skip onto next part of loop.
+
+
+for( i in 1:length( mediator ) ){
+
+        ## for loop after then
+        if ( all(in_outDAG_SplinesRemoved[[1]][[indexMediator[i] ]] %in% mediatorAdjustmentSetCanonical[[i]]) & isAdjustmentSet(dagified, setdiff( in_outDAG_SplinesRemoved[[1]][[indexMediator[i] ]], exposure ), exposure = exposure, outcome = mediator[i]) ){
+
+           ## OK MAYBE DO NOTHING, IT PASSES OUR CHECK
+           next
+
+        } else{
+
+                ## need to for loop to see if an adjustment set exists
+                ###############################################################################
+                # Try canonical set first.Before looping through all possible adjustment sets.
+                ###############################################################################
+                #updateMediatorAdjustSetCanon_noResponse[[i]] <- adjustmentSets(dagified, exposure = in_outDAG_SplinesRemoved[[1]][[indexMediator[i] ]], outcome = mediator[i] , type = "canonical", effect = c("total", "direct"))
+                updateMediatorAdjustSetCanon_noResponse[[i]] <- adjustmentSets(dagified, exposure = exposure, outcome = mediator[i] , type = "canonical", effect = c("total", "direct"))
+
+                ##############
+                ##############
+                ### 1. >0
+                ##############
+                ##############
+                ###########
+
+                if( length(updateMediatorAdjustSetCanon_noResponse[[i]][[1]]) > 0 ){
+                ###########
+                ### Start
+                ###########
+                ###########
+
+                        Subset_MediatorAdjustmentSet[[i]]  <- updateMediatorAdjustSetCanon_noResponse[[i]][[1]]
+
+                        Full_MediatorAdjustmentSet[[i]] <- c( exposure, Subset_MediatorAdjustmentSet[[i]] )
+
+                        if( all( Full_MediatorAdjustmentSet[[i]] %in% mediatorAdjustmentSetCanonical[[i]]) & isAdjustmentSet(dagified,setdiff(Full_MediatorAdjustmentSet[[i]] , exposure ) , exposure = exposure, outcome = mediator[i]) ){
+                                in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet[[i]]
+                                #1. store that this has been updated
+                                in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                next
+                        } else{
+##################################################################
+##################################################################
+                        ## **Loop over all adjustment sets. Keeping canonical mediator outcome adjustment set fixed ## SAME CODE AS BELOW
+##################################################################
+##################################################################
+                               updateMediatorAdjustSetCanon_noResponse_All[[i]] <- adjustmentSets(dagified, exposure = exposure, outcome = mediator[i] , type = "all", effect = c("total", "direct"))
+
+                               stopCounter <- FALSE
+                               for( j in 1:length( updateMediatorAdjustSetCanon_noResponse_All[[i]] ) ){
+
+                                        # Then already dealth with this case above, so just want to populate list rather than leaving it empty.
+                                        if( length(updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]) == 0 ){
+
+                                                Subset_MediatorAdjustmentSet[[i]][[j]]  <- updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]
+
+                                                Full_MediatorAdjustmentSet[[i]][[j]] <- c( exposure )
+
+                                                if( all( Full_MediatorAdjustmentSet[[i]][[j]] %in% mediatorAdjustmentSetCanonical[[i]]) & isAdjustmentSet(dagified, c(), exposure = exposure, outcome = mediator[i]) ){
+                                                        in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet[[i]][[j]]
+                                                        #2. store that this has been updated
+                                                        in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                                        stopCounter <- TRUE
+                                                        break
+                                                }
+
+                                        } else if( length(updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]) > 0 ){
+                                              # Check if issue if Subset_MediatorAdjustmentSet[[i]] in one iteration of for loop Subset_MediatorAdjustmentSet[[i]][[j]] in the other iteration of the for loop
+                                              # ONLY issue if [[i]] is replace with a call of form [[i]][[j]] and the i is the same.
+                                              Subset_MediatorAdjustmentSet[[i]][[j]]  <- updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]
+
+                                              Full_MediatorAdjustmentSet[[i]][[j]] <- c( exposure,
+                                                                                         Subset_MediatorAdjustmentSet[[i]][[j]] )
+
+                                              if( all( Full_MediatorAdjustmentSet[[i]][[j]] %in% mediatorAdjustmentSetCanonical[[i]]) & isAdjustmentSet(dagified, setdiff( Full_MediatorAdjustmentSet[[i]][[j]] , exposure ) , exposure = exposure, outcome = mediator[i]) ){
+                                                      in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet[[i]][[j]]
+                                                      #3. store that this has been updated
+                                                      in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                                      stopCounter <- TRUE
+                                                      break
+                                              }
+                                        }
+                            }
+      ##################################################################
+      ##################################################################
+
+                                    ###############################################################
+                                    ###############################################################
+                                    ###############################################################
+                                    ##### Loop over both (1) mediator exposure adjustment sets and (2) mediator outcome adjustment sets
+                                    ###############################################################
+                                    ###############################################################
+                                    ###############################################################
+
+                                    stop = FALSE
+                                    if( stopCounter == FALSE ){
+
+
+                                        # for( p in 1:length(mediator) ){
+
+                                          # mediatorAdjustmentSetCanonical[p] <- adjustmentSets(dagified, exposure = mediator[p], outcome = response , type = "canonical", effect = c("total", "direct"))
+                                          mediatorAdjustmentSetAll[[i]] <- adjustmentSets(dagified, exposure = mediator[i], outcome = response , type = "all", effect = c("total", "direct"))
+
+                                        # }
+
+                                      for( m in 1:length( mediatorAdjustmentSetAll[[i]] ) ){
+
+                                            for(j in 1:length( updateMediatorAdjustSetCanon_noResponse_All[[i]] ) ){
+
+                                                                      # Then already dealth with this case above, so just want to populate list rather than leaving it empty.
+                                                                      if( length(updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]) == 0 ){
+
+                                                                              Subset_MediatorAdjustmentSet_ALL[[i]][[j]]  <- updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]
+
+                                                                              Full_MediatorAdjustmentSet_All[[i]][[j]] <- c( exposure )
+
+                                                                              if( all( Full_MediatorAdjustmentSet_All[[i]][[j]] %in% mediatorAdjustmentSetAll[[i]][[m]]) & isAdjustmentSet(dagified, c(), exposure = exposure, outcome = mediator[i]) ){
+                                                                                      in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet_All[[i]][[j]]
+                                                                                      #2. store that this has been updated
+                                                                                      in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                                                                      # NEED TO CHECK IF THIS CHANGE TO mediatorAdjustmentSetCanonical[i] MAKES A DIFFERENCE
+                                                                                       mediatorAdjustmentSetCanonical[[i]] <- mediatorAdjustmentSetAll[[i]][[m]]
+                                                                                      stop <- TRUE
+                                                                                      break
+                                                                              }
+
+                                                                      } else if( length(updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]) > 0 ){
+                                                                            # Check if issue if Subset_MediatorAdjustmentSet[[i]] in one iteration of for loop Subset_MediatorAdjustmentSet[[i]][[j]] in the other iteration of the for loop
+                                                                            # ONLY issue if [[i]] is replace with a call of form [[i]][[j]] and the i is the same.
+                                                                            Subset_MediatorAdjustmentSet_ALL[[i]][[j]]  <- updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]
+
+                                                                            Full_MediatorAdjustmentSet_All[[i]][[j]] <- c( exposure,
+                                                                                                                       Subset_MediatorAdjustmentSet_ALL[[i]][[j]] )
+
+                                                                            if( all( Full_MediatorAdjustmentSet_All[[i]][[j]] %in% mediatorAdjustmentSetAll[[i]][[m]]) & isAdjustmentSet(dagified, setdiff( Full_MediatorAdjustmentSet_All[[i]][[j]] , exposure ) , exposure = exposure, outcome = mediator[i]) ){
+                                                                                    in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet_All[[i]][[j]]
+                                                                                    #3. store that this has been updated
+                                                                                    in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                                                                    mediatorAdjustmentSetCanonical[[i]] <- mediatorAdjustmentSetAll[[i]][[m]]
+                                                                                    stop <- TRUE
+                                                                                    break
+                                                                            }
+                                                                      }
+                                            }
+                                            if(stop){ break }
+                                      }
+
+
+                                    }
+
+                                    ###############################################################
+                                    ###############################################################
+                                    ###############################################################
+                                    ## END
+                                    ###############################################################
+                                    ###############################################################
+                                    ###############################################################
+
+
+
+
+                        }
+                ###########
+                ###########
+                ### End
+                ###########
+                ###########
+                }
+
+
+                ################
+                ################
+                ## 2. == 0
+                ################
+                ################
+                if( (length(updateMediatorAdjustSetCanon_noResponse[[i]]) == 0) & isAdjustmentSet(dagified, c(), exposure = exposure, outcome = mediator[i]) & all( exposure %in% mediatorAdjustmentSetCanonical[[i]])  ){
+
+                        in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- exposure
+                        #4. store that this has been updated
+                        in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                        next
+
+                        } else if( length(updateMediatorAdjustSetCanon_noResponse[[i]]) == 0 ){
+
+      ##################################################################
+      ##################################################################
+                              ## **Loop over all adjustment sets.Keeping canonical mediator outcome adjustment set fixed ## SAME CODE AS ABOVE
+      ##################################################################
+      ##################################################################
+                              # Then need to do a biggier lopp
+                               # updateMediatorAdjustSetCanon_noResponse_All[[i]] <- adjustmentSets(dagified, exposure = in_outDAG_SplinesRemoved[[1]][[indexMediator[i] ]], outcome = mediator[i] , type = "all", effect = c("total", "direct"))
+                               updateMediatorAdjustSetCanon_noResponse_All[[i]] <- adjustmentSets(dagified, exposure = exposure, outcome = mediator[i] , type = "all", effect = c("total", "direct"))
+
+                               stopCounter <- FALSE
+                               for( j in 1:length( updateMediatorAdjustSetCanon_noResponse_All[[i]] ) ){
+
+                                        # Then already dealth with this case above, so just want to populate list rather than leaving it empty.
+                                        if( length(updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]) == 0 ){
+
+                                                Subset_MediatorAdjustmentSet[[i]][[j]]  <- updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]
+
+                                                # c( in_outDAG_SplinesRemoved[[1]][[i]], Subset_MediatorAdjustmentSet[[i]][[j]] )
+                                                Full_MediatorAdjustmentSet[[i]][[j]] <- c( exposure )
+
+                                                if( all( Full_MediatorAdjustmentSet[[i]][[j]] %in% mediatorAdjustmentSetCanonical[[i]]) & isAdjustmentSet(dagified, c(), exposure = exposure, outcome = mediator[i]) ){
+                                                        in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet[[i]]
+                                                        #5. store that this has been updated
+                                                        in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                                        stopCounter <- TRUE
+                                                        break
+                                                        ## NOTE MIGHT NEED ANOTHER BREAK ALSO TO EXIT OTHER FOR LOOPS
+                                                }
+
+                                        } else if( length(updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]) > 0 ){
+
+                                              Subset_MediatorAdjustmentSet[[i]][[j]]  <- updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]
+
+                                              Full_MediatorAdjustmentSet[[i]][[j]] <- c( exposure,
+                                                                                         Subset_MediatorAdjustmentSet[[i]][[j]] )
+
+                                              if( all( Full_MediatorAdjustmentSet[[i]][[j]] %in% mediatorAdjustmentSetCanonical[[i]]) & isAdjustmentSet(dagified, setdiff(Full_MediatorAdjustmentSet[[i]][[j]] , exposure ) , exposure = exposure, outcome = mediator[i]) ){
+                                                      in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet[[i]]
+                                                      #6. store that this has been updated
+                                                      in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                                      stopCounter <- TRUE
+                                                      break
+                                                        ## NOTE MIGHT NEED ANOTHER BREAK ALSO TO EXIT OTHER FOR LOOPS
+                                              }
+                                      }
+                               }
+
+
+                                  ###############################################################
+                                  ###############################################################
+                                  ###############################################################
+                                  ##### Loop over both (1) mediator exposure adjustment sets and (2) mediator outcome adjustment sets
+                                  ###############################################################
+                                  ###############################################################
+                                  ###############################################################
+
+                                  stop = FALSE
+                                  if( stopCounter == FALSE ){
+
+
+                                      # for( p in 1:length(mediator) ){
+
+                                        # mediatorAdjustmentSetCanonical[p] <- adjustmentSets(dagified, exposure = mediator[p], outcome = response , type = "canonical", effect = c("total", "direct"))
+                                        mediatorAdjustmentSetAll[[i]] <- adjustmentSets(dagified, exposure = mediator[i], outcome = response , type = "all", effect = c("total", "direct"))
+
+                                      # }
+
+                                    for( m in 1:length( mediatorAdjustmentSetAll[[i]] ) ){
+
+                                          for(j in 1:length( updateMediatorAdjustSetCanon_noResponse_All[[i]] ) ){
+
+                                                                    # Then already dealth with this case above, so just want to populate list rather than leaving it empty.
+                                                                    if( length(updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]) == 0 ){
+
+                                                                            Subset_MediatorAdjustmentSet_ALL[[i]][[j]]  <- updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]
+
+                                                                            Full_MediatorAdjustmentSet_All[[i]][[j]] <- c( exposure )
+
+                                                                            if( all( Full_MediatorAdjustmentSet_All[[i]][[j]] %in% mediatorAdjustmentSetAll[[i]][[m]]) & isAdjustmentSet(dagified, c(), exposure = exposure, outcome = mediator[i]) ){
+                                                                                    in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet_All[[i]][[j]]
+                                                                                    #2. store that this has been updated
+                                                                                    in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                                                                    # NEED TO CHECK IF THIS CHANGE TO mediatorAdjustmentSetCanonical[i] MAKES A DIFFERENCE
+                                                                                     mediatorAdjustmentSetCanonical[[i]] <- mediatorAdjustmentSetAll[[i]][[m]]
+                                                                                    stop <- TRUE
+                                                                                    break
+                                                                            }
+
+                                                                    } else if( length(updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]) > 0 ){
+                                                                          # Check if issue if Subset_MediatorAdjustmentSet[[i]] in one iteration of for loop Subset_MediatorAdjustmentSet[[i]][[j]] in the other iteration of the for loop
+                                                                          # ONLY issue if [[i]] is replace with a call of form [[i]][[j]] and the i is the same.
+                                                                          Subset_MediatorAdjustmentSet_ALL[[i]][[j]]  <- updateMediatorAdjustSetCanon_noResponse_All[[i]][[j]]
+
+                                                                          Full_MediatorAdjustmentSet_All[[i]][[j]] <- c( exposure,
+                                                                                                                     Subset_MediatorAdjustmentSet_ALL[[i]][[j]] )
+
+                                                                          if( all( Full_MediatorAdjustmentSet_All[[i]][[j]] %in% mediatorAdjustmentSetAll[[i]][[m]]) & isAdjustmentSet(dagified, setdiff( Full_MediatorAdjustmentSet_All[[i]][[j]] , exposure ) , exposure = exposure, outcome = mediator[i]) ){
+                                                                                  in_outDAG_SplinesRemoved[[1]][[ indexMediator[i] ]] <- Full_MediatorAdjustmentSet_All[[i]][[j]]
+                                                                                  #3. store that this has been updated
+                                                                                  in_outDAG_SplinesRemoved_IndexUpdated[[i]] <- indexMediator[i]
+                                                                                  mediatorAdjustmentSetCanonical[[i]] <- mediatorAdjustmentSetAll[[i]][[m]]
+                                                                                  stop <- TRUE
+                                                                                  break
+                                                                          }
+                                                                    }
+                                          }
+                                          if(stop){ break }
+                                    }
+
+
+                                  }
+
+                                  ###############################################################
+                                  ###############################################################
+                                  ###############################################################
+                                  ## END
+                                  ###############################################################
+                                  ###############################################################
+                                  ###############################################################
+
+                  }
+        }
+
+}
+
+#############################################
+#############################################
+#############################################
+#################################################################################################################
+
+
 
 ######################
 ######################
@@ -368,6 +755,7 @@ if( length( splinesVariablesIndices) > 0 ){
               # 2. Add splines back into mediatorAdjustmentSetCanonical
               # 3. Return plot of causal DAG
               # 4. NO need to add into in_outDAG_SplinesRemoved within function, as outside function in_outDAG should still contain the splines
+              # 5. If in_outDAG fails the check above and is updated with a new adjustment set for at least one of the mediators, then we need to update in_outDAG and ensure splines are added in.
           ##########################################################
           ##########################################################
 
@@ -513,6 +901,57 @@ if( length( splinesVariablesIndices) > 0 ){
                #### NEED TO CHECK IF WORKS FOR ANY ORDER OF exposure=c("subhtn","apob_apoa","whr") e.g. exposure=c("whr","subhtn","apob_apoa
                #### NEED TO CHECK IF WORKS FOR ANY ORDER OF exposure=c("subhtn","apob_apoa","whr") e.g. exposure=c("whr","subhtn","apob_apoa
                #### NEED TO CHECK IF WORKS FOR ANY ORDER OF exposure=c("subhtn","apob_apoa","whr") e.g. exposure=c("whr","subhtn","apob_apoa
+
+########################################################
+########################################################
+          # 5. If in_outDAG fails the check above and is updated with a new adjustment set for at least one of the mediators, then we need to update in_outDAG and ensure splines are added in.
+
+          indicesUpdated <- which(lapply(in_outDAG_SplinesRemoved_IndexUpdated , function(data_input) !is.null(data_input)  ) > 0 )
+
+          if( length( indicesUpdated ) > 0 ){
+
+                in_outDAG_SplinesAddIn <- in_outDAG
+
+                for( w in 1:length(indicesUpdated) ){
+
+                      # This is the mediator adjustment set that was updated and we need to identify if there are variables which will be analysed as splines
+                      in_outDAG_SplinesAddIn[[1]][[  in_outDAG_SplinesRemoved_IndexUpdated[[ indicesUpdated[w] ]]   ]] <- in_outDAG_SplinesRemoved[[1]][[  in_outDAG_SplinesRemoved_IndexUpdated[[ indicesUpdated[w] ]]   ]]
+
+
+
+                      # for ( i in 1:length(exposureAdjustmentSetCanonical) ) {
+                      # for ( i in 1:length(in_outDAG_SplinesAddIn[[1]][[  in_outDAG_SplinesRemoved_IndexUpdated[[ indicesUpdated[w] ]]   ]]) ) {
+
+                            # if( any(splinesVariables %in% exposureAdjustmentSetCanonical[[i]] ) ){
+                              if( any(splinesVariables %in% in_outDAG_SplinesAddIn[[1]][[  in_outDAG_SplinesRemoved_IndexUpdated[[ indicesUpdated[w] ]]   ]] ) ){
+
+                                  for( j in 1:length( splinesVariables ) ){
+
+                                        # indicesAddSplinesInExposureAdjSet <- which( exposureAdjustmentSetCanonical[[i]] == in_outDAG[[2]][ splinesVariablesIndices[1]:splinesVariablesIndices[length(splinesVariablesIndices)] ][j]  )
+                                        indicesAddSplinesInMediatorCheckAdjSet <- which( in_outDAG_SplinesAddIn[[1]][[  in_outDAG_SplinesRemoved_IndexUpdated[[ indicesUpdated[w] ]]   ]] == in_outDAG[[2]][ splinesVariablesIndices[1]:splinesVariablesIndices[length(splinesVariablesIndices)] ][j]  )
+
+                                        if( length(indicesAddSplinesInMediatorCheckAdjSet) == 0 ){
+
+                                                # Do nothing since no splines in adjustment set.
+
+                                        } else if( length(indicesAddSplinesInMediatorCheckAdjSet) > 0 ){
+
+                                                 # exposureAdjustmentSetCanonical[[ i]][[indicesAddSplinesInMediatorCheckAdjSet ]] <- Splines_outlist_Var[[1]][ splinesVariablesIndices[j]  ]
+                                                 in_outDAG_SplinesAddIn[[1]][[  in_outDAG_SplinesRemoved_IndexUpdated[[ indicesUpdated[w] ]]   ]][[indicesAddSplinesInMediatorCheckAdjSet ]] <- Splines_outlist_Var[[1]][ splinesVariablesIndices[j]  ]
+
+                                        } else{
+
+                                                stop("Error in processing Splines_outlist_Var. Splines_outlist_Var variable may be defined incorrectly.")
+
+                                        }
+                                 }
+                          }
+                     # }
+                }
+           }
+
+########################################################
+########################################################
 
 
 } else{
@@ -728,15 +1167,37 @@ if( length( splinesVariablesIndices) > 0 ){
 # response_model_mediators = response_vs_mediator,
 # response_model_exposure = list(),
 
-    my_list_causal <- list("plot" = CausalDagPlot,
-                           "exposuresAdjustmentSetCanonical" = exposureAdjustmentSetCanonical,
-                           "mediatorsAdjustmentSetCanonical" = mediatorAdjustmentSetCanonical,
-                           "exposuresWithSplinesReturn" = exposuresWithSplinesReturn,
-                           "mediatorWithSplines" = mediatorsWithSplinesReturn,
-                           "resultExposure" = resultExposure,
-                           "resultMediator" = resultMediator)
+
+      if( length( indicesUpdated ) > 0 ){
+
+            my_list_causal <- list(#"plot" = CausalDagPlot,
+                                   "exposuresAdjustmentSetCanonical" = exposureAdjustmentSetCanonical,
+                                   "mediatorsAdjustmentSetCanonical" = mediatorAdjustmentSetCanonical,
+                                   "exposuresWithSplinesReturn" = exposuresWithSplinesReturn,
+                                   "mediatorWithSplines" = mediatorsWithSplinesReturn,
+                                   "resultExposure" = resultExposure,
+                                   "resultMediator" = resultMediator,
+                                   "in_outDAG_updatedAfterCheck" = in_outDAG_SplinesAddIn)  # Only returned if check is applied above.
+
+      }else{
+            my_list_causal <- list(#"plot" = CausalDagPlot,
+                                   "exposuresAdjustmentSetCanonical" = exposureAdjustmentSetCanonical,
+                                   "mediatorsAdjustmentSetCanonical" = mediatorAdjustmentSetCanonical,
+                                   "exposuresWithSplinesReturn" = exposuresWithSplinesReturn,
+                                   "mediatorWithSplines" = mediatorsWithSplinesReturn,
+                                   "resultExposure" = resultExposure,
+                                   "resultMediator" = resultMediator ,
+                                   "in_outDAG_updatedAfterCheck" = NULL)  # Can check if this is NULL to identify if the check has been applied.
+      }
+
+
+
 
     return(my_list_causal)
+
+      # in_outDAG_SplinesRemoved
+      # in_outDAG    needs to be updated based on in_outDAG_SplinesRemoved
+      # only mediator indices would have been changed
 
 
 }

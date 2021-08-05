@@ -46,8 +46,7 @@ pointEstimate <- function(dataframe,
                           custom = ""
                           ){
 
-
-
+  # ggproto <- ggplot2::ggproto
 
   ##################################
   ## Test run entries
@@ -133,12 +132,47 @@ for(i in 1:length(mediator)){
 model_list_usePointEstimate <- vector(mode = "list", length = length(in_outArg[[2]]) )
 model_list_evalPointEstimate <- vector(mode = "list", length = length(in_outArg[[2]]) )
 
+##########################################################################
+##########################################################################
+# Perform check and dagitty check
+##########################################################################
+##########################################################################
+## ADD IN make_DAG() here to perform check and dagitty on in_outArg
+# MOVE make_DAG() below up here
+# This works since in_outArg is used to define the DAG based on the original input of the user, but is then updated based on the check in the following if statement.
+make_DAG_output <- make_DAG(in_outDAG = in_outArg ,
+                            exposure = exposure,
+                            response = response,
+                            mediator = mediator,
+                            Splines_outlist_Var = Splines_outlist,
+                            # splinesDefinedIn_in_outDAG = TRUE,
+                            splinesDefinedIn_in_outDAG = splinesDefinedIn_in_outDAG,
+                            addCustomExposureAdjustmentSet = addCustom,
+                            customExposureAdjustmentSet = custom,
+                            addCustomMediatorAdjustmentSet = addCustom,
+                            customMediatorAdjustmentSet = custom )   # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
+
+## If is NULL, it means there was no update applied and no change is required.
+## So if not Null, then in_outArg needs to be updated based on (1) dagitty check and (2) check required based on derivation.
+if( !is.null(make_DAG_output$my_list_causal$in_outDAG_updatedAfterCheck) ){
+
+        ##in_outArg is a parameter of the function but what to update it based on make_DAG (1) check requested by John Ferguson and (2) Dagitty check
+        # MAYBE WE DO NOT WANT TO CHANGE THE INPUT PARAMETER in_outArg and rather we want to change
+        # eval_make_formula(...., in_out = make_DAG_output$my_list_causal$in_outDAG_updatedAfterCheck, ....)
+        ## check whether changing the parameter input in_outArg upsets anything else within the function?
+         in_outArg <- make_DAG_output$my_list_causal$in_outDAG_updatedAfterCheck
+}
+
+###########################################################################
+###########################################################################
+###########################################################################
+
 # If user has not fitted their own model_listArg then fit as follows
 if( length(model_listArg) == 0 ){
       model_list_inputPointEstimate <- list()
 
       # model_list_usePointEstimate <- eval_make_formula(data = dataframe, in_out=in_outArg,model_list=model_list_inputPointEstimate, w=dataframe$weights, addCustom, custom)
-      model_list_usePointEstimate <- eval_make_formula(data = dataframe, in_out=in_outArg,model_list=model_list_inputPointEstimate, w = weights, addCustom, custom)
+      model_list_usePointEstimate <- eval_make_formula(data = dataframe, in_out = in_outArg, model_list=model_list_inputPointEstimate, w = weights, addCustom, custom)
       #   # TRY TO GET IN FUNCTION ENVIRONMENT E.G. model$terms <- eval(model$call$formula)
     #   # Return these from function and evaluate in this evironment!! Hopefully solve it.
 
@@ -267,16 +301,19 @@ if( length(model_listArg) == 0 ){
 # NEED TO UPDATE CUSTOM AS CURRENTLY make_formula() requires ~ but should change so runs without ~ needed
 # custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
 # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
-make_DAG_output <- make_DAG(in_outDAG = in_outArg ,
-                            exposure = exposure,
-                            response = response,
-                            mediator = mediator,
-                            Splines_outlist_Var = Splines_outlist,
-                            splinesDefinedIn_in_outDAG = TRUE,
-                            addCustomExposureAdjustmentSet = addCustom,
-                            customExposureAdjustmentSet = custom,
-                            addCustomMediatorAdjustmentSet = addCustom,
-                            customMediatorAdjustmentSet = custom )   # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
+# ############
+# ## Moved make_DAG_output <- make_DAG(...) call up as needs to be used earlier
+# ############
+# make_DAG_output <- make_DAG(in_outDAG = in_outArg ,
+#                             exposure = exposure,
+#                             response = response,
+#                             mediator = mediator,
+#                             Splines_outlist_Var = Splines_outlist,
+#                             splinesDefinedIn_in_outDAG = TRUE,
+#                             addCustomExposureAdjustmentSet = addCustom,
+#                             customExposureAdjustmentSet = custom,
+#                             addCustomMediatorAdjustmentSet = addCustom,
+#                             customMediatorAdjustmentSet = custom )   # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
 
 
 # make_DAG_output_resultExposure <- make_DAG(in_outDAG = in_outArg ,

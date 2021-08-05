@@ -8,6 +8,7 @@
 #' @param response_model_exposure A model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure and risk factors in the causal Bayesian network. See example in tutorial.
 #' @param in_outArg A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list contains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.
 #' @param Splines_outlist A list defined of same size and order of variables as defined in in_outArg[[2]]. If splines are to be used for variables listed in in_outArg[[2]], then the splines should be defined in the same order as variables appear in in_outArg[[2]]. It is necessary to list variables in in_outArg[[2]] without splines if no spline is to be applied. Should be input as list() if no splines.
+#' @param splinesDefinedIn_in_outDAG Logical TRUE or FALSE indicating whether the user has defined splines in the causal DAG, in_out, if TRUE. If FALSE and splines are defined in Splines_outlist_Var, then it is necessary for the package to populate the in_out DAG with splines listed in Splines_outlist_Var.
 #' @param model_listArg is a list of models fitted for each of the variables in in_out$outlist based on its parents given in in_out$inlist. By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.
 #' @param weights Column of weights for case control matching listed in the same order as the patients in the data e.g. weights = strokedata$weights.
 #' @param NumBootstrap The number of bootstraps the user wants to use to calculate confidence intervals for the effect. A minimum of 200 bootstrap repilcations (Efron (2016), Computer Age Statistical Inference, page 162) are recommended to calculate standard errors (for intervals of the form: estimate +/-1.96*(standard error of boostrap estimate. However increasing the number of bootstraps can result in the package taking a long time to run. So the user may decide to balance speed with accuracy depedning on which is of more value in the specific context.
@@ -22,6 +23,7 @@
 #' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interactin terms. See tutorial for examples.
 #' @export
 #' @importFrom dplyr bind_rows mutate
+#' @importFrom ggdag dagify tidy_dagitty ggdag theme_dag
 #' @import splines MASS stats forestplot utils grid magrittr checkmate ggplot2
 #' @keywords models Regression Population Attributable Fraction
 #' @return Prints a forest plot or a bar chart with error bars of the 5 results for each mediator. The 5 results are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (3)Indirect Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
@@ -41,6 +43,7 @@ causalPAFplot <- function(dataframe,
                           response_model_exposure = list(),
                           in_outArg,
                           Splines_outlist = list(),   # needs to be input as list() if no splines. Assumes exposure is not written in spline format
+                          splinesDefinedIn_in_outDAG,
                           model_listArg,
                           # weights = strokedata$weights,
                           weights = 1,  # weights = stroke_reduced$weights
@@ -59,6 +62,22 @@ causalPAFplot <- function(dataframe,
                           custom = ""
                           ){
 
+  # ggproto <- ggplot2::ggproto
+
+
+  # library(dplyr)
+  # library(splines)
+  # library(MASS)
+  # library(stats)
+  # library(forestplot)
+  # library(utils)
+  # library(grid)
+  # library(magrittr)
+  # library(checkmate)
+  # library(ggplot2)
+  # ####
+  # library(ggdag)
+  # library(dagitty)
 
                           # dataframe = stroke_reduced
                           # exposure="phys"
@@ -69,6 +88,7 @@ causalPAFplot <- function(dataframe,
                           # response_model_exposure = list()
                           # in_outArg = in_out
                           # Splines_outlist = Splines_outlist  # needs to be input as list() if no splines. Assumes if appears as spline once needs to appear as a spline in all occurences
+                          # splinesDefinedIn_in_outDAG = TRUE
                           # model_listArg = list()
                           # weights = stroke_reduced$weights
                           # NumBootstrap = 2
@@ -83,12 +103,14 @@ causalPAFplot <- function(dataframe,
                           # addCustom = TRUE
                           # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
 
+
+
 ## At moment, weigths are populated in the dataframe before calling function causalPAFplot.r. The default is weights = 1 which is not a case-control data format but rather a cohort weighting by default.
 ## CHANGE TO MAKE: NEED TO UPDATE causalPAFplot to link weights to bootstrap$weights below as not defined properly
 ## CHANGE TO MAKE: Build in so response_model_mediators can be built into causalPAFplot similar to how response_model_exposure has been built in
 
 
-dataframe <- mutate(dataframe, weightsAppendColumnToData = weights)
+dataframe <- dplyr::mutate(dataframe, weightsAppendColumnToData = weights)
 
 # addCustom = TRUE, custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
 
@@ -116,7 +138,8 @@ results_mediatorPointEstimate <- pointEstimate(dataframe = dataframe,
                                                response_model_exposure = response_model_exposure,
                                                in_outArg = in_outArg,
                                                Splines_outlist = Splines_outlist,  # needs to be input as list() if no splines. Assumes if appears as spline once needs to appear as a spline in all occurences
-                                               splinesDefinedIn_in_outDAG = TRUE,
+                                               # splinesDefinedIn_in_outDAG = TRUE,
+                                               splinesDefinedIn_in_outDAG = splinesDefinedIn_in_outDAG,
                                                model_listArg = model_listArg,
                                                weights = weights,
                                                NumSimulation = NumSimulation,
@@ -183,6 +206,20 @@ model_list_eval <- vector(mode = "list", length = length(in_outArg[[2]]) )
 
 response_vs_mediatorBootstrap <- list()
 
+
+## This works since in_outArg is used to define the DAG based on the original input of the user, but is then updated based on the check in the following if statement.
+make_DAG_output_check <- make_DAG(in_outDAG = in_outArg ,
+                                  exposure = exposure,
+                                  response = response,
+                                  mediator = mediator,
+                                  Splines_outlist_Var = Splines_outlist,
+                                  splinesDefinedIn_in_outDAG = TRUE,
+                                  addCustomExposureAdjustmentSet = addCustom,
+                                  customExposureAdjustmentSet = custom,
+                                  addCustomMediatorAdjustmentSet = addCustom,
+                                  customMediatorAdjustmentSet = custom )   # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
+
+
 for ( v in 1:NumBootstrap ){
 
 
@@ -204,7 +241,19 @@ if( length(model_listArg) == 0 ){
       model_list_input <- list()
       # model_list_use <- eval_make_formula(data = Bootstrap, in_out=in_outArg,model_list=model_listArg, w=Bootstrap$weights)
       # model_list_use <- eval_make_formula(data = Bootstrap, in_out=in_outArg,model_list=model_list_input, w=Bootstrap$weights, addCustom, custom)
-      model_list_use <- eval_make_formula(data = Bootstrap, in_out=in_outArg,model_list=model_list_input, w=Bootstrap$weightsAppendColumnToData, addCustom, custom)
+
+      ## If is NULL, it means there was no update applied and no change is required.
+      ## So if not Null, then in_outArg needs to be updated based on (1) dagitty check and (2) check required based on derivation.
+      if( !is.null(make_DAG_output_check$my_list_causal$in_outDAG_updatedAfterCheck) ){
+          ##in_outArg is a parameter of the function but what to update it based on make_DAG (1) check requested by John Ferguson and (2) Dagitty check
+          # in_outArg <- make_DAG_output_check$my_list_causal$in_outDAG_updatedAfterCheck
+          model_list_use <- eval_make_formula(data = Bootstrap,
+                                              # in_out = in_outArg,
+                                              in_out = make_DAG_output_check$my_list_causal$in_outDAG_updatedAfterCheck,
+                                              model_list=model_list_input, w=Bootstrap$weightsAppendColumnToData, addCustom, custom)
+      }else{
+            model_list_use <- eval_make_formula(data = Bootstrap, in_out = in_outArg,model_list=model_list_input, w=Bootstrap$weightsAppendColumnToData, addCustom, custom)
+       }
       #   # TRY TO GET IN FUNCTION ENVIRONMENT E.G. model$terms <- eval(model$call$formula)
     #   # model$terms <- eval(model$call$formula)
     #   model_list_use[[1]]$terms <- eval(model_list_use[[1]]$call$formula)
