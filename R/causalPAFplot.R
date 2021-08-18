@@ -4,21 +4,18 @@
 #' @param exposure The name of the exposure column variable within dataframe in text format e.g. "phys".
 #' @param mediator The name of the mediator column variables within dataframe in text format. There can be more than one mediator of interest. It can be a vector of mediators names within the dataframe e.g. c("subhtn","apob_apoa","whr").
 #' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
-#' @param response_model_mediators A model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.
-#' @param response_model_exposure A model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure and risk factors in the causal Bayesian network. See example in tutorial.
-#' @param in_outArg A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list contains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.
-#' @param Splines_outlist A list defined of same size and order of variables as defined in in_outArg[[2]]. If splines are to be used for variables listed in in_outArg[[2]], then the splines should be defined in the same order as variables appear in in_outArg[[2]]. It is necessary to list variables in in_outArg[[2]] without splines if no spline is to be applied. Should be input as list() if no splines.
+#' @param response_model_mediators A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.This model can be listed either as (1) an empty list ( response_model_mediators = list() ) or (2) the user can specify their own customised causal regression model(s) to use. When it is listed as an empty list the causalPAF package will fit the response_model_mediators regression model automatically based on the causal DAG supplied by the user in in_outArg. Alternatively, the user can specify the exact model(s) that the user wishes to use, these model(s) must be in list format (list() where length(response_model_mediators) == length(mediator) ), the same length as the parameter, mediator, with the user customised model for each mediator listed in the same order as in the parmeter, mediator, and if there is only one model, it must be listed each time within the list() so that length(response_model_mediators) == length(mediator).
+#' @param response_model_exposure A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure in the causal Bayesian network. This regression model will not adjust for mediators (exclude mediators) of the exposure in the regression model so that the total effect of the exposure on the response can be modelled. This model can be listed either as (1) an empty list ( response_model_exposure = list() ) or (2) the user can specify their own customised causal regression model to use. If specified as an empty list, list(), then the causalPAF function will define and fit the model automatically based on the causal DAG defined by the in_outArg parameter. Alternatively, the user can specify the exact model that the user wishes to use, this model must be in list format (list() where length(response_model_exposure) == 1 ), of length 1, assuming only one exposure of interest (other exposures can be risk factors) and the model must be defined within a list() since the package assumes a list() format is supplied. See example in tutorial. E.G. If physical exercise ("exer") in the example given in the diagram is the exposure. Then the regression would include all parents of "exer" (i.e. sex, region, educ, age) as well as risk factors at the same level of the causal Bayesian network (i.e. stress, smoke, diet, alcoh).
+#' @param in_outArg This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
+#' @param Splines_outlist A list defined of same size and order of variables as defined in in_outArg[[2]]. If splines are to be used for variables listed in in_outArg[[2]], then the splines should be defined in Splines_outlist in the same order as variables appear in in_outArg[[2]]. It is necessary to list variables in Splines_outlist the same as in in_outArg[[2]] without splines if no spline is to be applied. It should not be input as an empty list, list(), if no splines. A warning will show if input as an empty list requiring the user to populate Splines_outlist either the same as in_outArg[[2]] (if no splines) or in the same order as in_outArg[[2]] with splines (if splines).  See example in tutorial.
 #' @param splinesDefinedIn_in_outDAG Logical TRUE or FALSE indicating whether the user has defined splines in the causal DAG, in_out, if TRUE. If FALSE and splines are defined in Splines_outlist_Var, then it is necessary for the package to populate the in_out DAG with splines listed in Splines_outlist_Var.
-#' @param model_listArg is a list of models fitted for each of the variables in in_out$outlist based on its parents given in in_out$inlist. By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.
+#' @param model_listArg is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\$outlist ) based on its parents given in in_outArg[[1]] ( or in_out\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the causalPAF package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.
 #' @param weights Column of weights for case control matching listed in the same order as the patients in the data e.g. weights = strokedata$weights.
 #' @param NumBootstrap The number of bootstraps the user wants to use to calculate confidence intervals for the effect. A minimum of 200 bootstrap repilcations (Efron (2016), Computer Age Statistical Inference, page 162) are recommended to calculate standard errors (for intervals of the form: estimate +/-1.96*(standard error of boostrap estimate. However increasing the number of bootstraps can result in the package taking a long time to run. So the user may decide to balance speed with accuracy depedning on which is of more value in the specific context.
 #' @param NumSimulation This is the number of simulatons requested by the user to estimate integrals. The larger the number of simulations the more accurate the results but the longer the code takes to run. Therefore the user may wish to balance speed with accuracy depending on which is of more value in the specific context of interest. The integrals for continuous variables are estimated using simulation methods.
 #' @param plot plot can be text inputs "forestplot" or "bar" where:"forestplot" plots a forest plot."bar" plots a bar chart with error bars.
 #' @param fill The colour for the fill in the bar chart is set here in text format. The default is fill= "skyblue".
 #' @param colour The colour for the error bar in the bar chart is set here in text format. The default is colour = "orange".
-#' @param boxCol The colour for the box in the forest plot is set here in text format. The default is box = "royalblue".
-#' @param lineCol The colour for the lines in the forest plot is set here in text format. The default is line = "darkblue".
-#' @param summaryCol The colour for a summary in the forest plot is set here in text format. The default is summary = "royalblue"
 #' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.
 #' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interactin terms. See tutorial for examples.
 #' @export
@@ -26,7 +23,7 @@
 #' @importFrom ggdag dagify tidy_dagitty ggdag theme_dag
 #' @import splines MASS stats forestplot utils grid magrittr checkmate ggplot2
 #' @keywords models Regression Population Attributable Fraction
-#' @return Prints a forest plot or a bar chart with error bars of the 5 results for each mediator. The 5 results are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (3)Indirect Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
+#' @return Prints a forest plot or a bar chart with error bars of the 5 results for each mediator. The 5 results are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using alternative definition, (3)Indirect Effect Population Attributable Fraction (PAF) using alternative definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
 #' @examples \dontrun{
 #' # I don't want you to run this
 #' }
@@ -42,9 +39,9 @@ causalPAFplot <- function(dataframe,
                           response_model_mediators = list(),
                           response_model_exposure = list(),
                           in_outArg,
-                          Splines_outlist = list(),   # needs to be input as list() if no splines. Assumes exposure is not written in spline format
-                          splinesDefinedIn_in_outDAG,
-                          model_listArg,
+                          Splines_outlist = list(),   # needs to be input as in_outArg[[2]] if no splines. Assumes exposure is not written in spline format
+                          splinesDefinedIn_in_outDAG = list(),
+                          model_listArg = list(),
                           # weights = strokedata$weights,
                           weights = 1,  # weights = stroke_reduced$weights
                           # prevalence ADD IN
@@ -55,12 +52,17 @@ causalPAFplot <- function(dataframe,
                           # errorbar = "errorbar",
                           fill = "skyblue",
                           colour="orange",
-                          boxCol="royalblue",
-                          lineCol="darkblue",
-                          summaryCol="royalblue",
+                          # boxCol="royalblue", # @param boxCol The colour for the box in the forest plot is set here in text format. The default is box = "royalblue".
+                          # lineCol="darkblue", # @param lineCol The colour for the lines in the forest plot is set here in text format. The default is line = "darkblue".
+                          # summaryCol="royalblue", # summaryCol The colour for a summary in the forest plot is set here in text format. The default is summary = "royalblue"
                           addCustom = FALSE,
                           custom = ""
                           ){
+
+
+  # @param boxCol The colour for the box in the forest plot is set here in text format. The default is box = "royalblue".
+  # @param lineCol The colour for the lines in the forest plot is set here in text format. The default is line = "darkblue".
+  # @param summaryCol The colour for a summary in the forest plot is set here in text format. The default is summary = "royalblue"
 
   # ggproto <- ggplot2::ggproto
 
@@ -102,6 +104,12 @@ causalPAFplot <- function(dataframe,
                           # summaryCol="royalblue"
                           # addCustom = TRUE
                           # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
+
+
+                          # # If USER WANTS TO FIT OWN MODELS
+                          # response_model_mediators = response_vs_mediator
+                          # response_model_exposure = response_vs_phys
+                          # model_listArg = model_listArgFit
 
 
 
@@ -198,14 +206,14 @@ Cases = dataframe[ dataframe[ ,grep(paste('^',response,'$',sep=''),colnames(data
 results_mediator <- list()
 for(i in 1:length(mediator)){
   results_mediator[[i]] <- matrix(nrow= NumBootstrap,ncol=5)
-  colnames(results_mediator[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+  # colnames(results_mediator[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+  colnames(results_mediator[[i]]) <- c("Total PAF","PAF_{Direct,M^j}","PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}","Direct PAF_{A->Y}")
 }
 
 model_list_use <- vector(mode = "list", length = length(in_outArg[[2]]) )
 model_list_eval <- vector(mode = "list", length = length(in_outArg[[2]]) )
 
 response_vs_mediatorBootstrap <- list()
-
 
 ## This works since in_outArg is used to define the DAG based on the original input of the user, but is then updated based on the check in the following if statement.
 make_DAG_output_check <- make_DAG(in_outDAG = in_outArg ,
@@ -316,7 +324,8 @@ response_vs_phys <- update(response_model_exposure[[1]], data = Bootstrap, weigh
   results_mediator_simulationStore <- list()
   for(i in 1:length(mediator)){
     results_mediator_simulationStore[[i]] <- matrix(nrow = NumSimulation,ncol=5)
-    colnames(results_mediator_simulationStore[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+    # colnames(results_mediator_simulationStore[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+    colnames(results_mediator_simulationStore[[i]]) <- c("Total PAF","PAF_{Direct,M^j}","PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}","Direct PAF_{A->Y}")
   }
 
   for(med in 1:length(results_mediator) ){
@@ -418,7 +427,8 @@ for(i in 1:length(mediator)){
     # THESE ARE THE BOOTSTRAPPED CONFIDENCE INTERVALS AND WE WANT TO BOOTSTRAP FOR THE CONFIDENE INTERVALS.
     results_mediator_table[[i]][2,] <- apply(results_mediator[[i]],2,mean) - 1.96*apply(results_mediator[[i]],2,sd)
     results_mediator_table[[i]][3,] <- apply(results_mediator[[i]],2,mean) + 1.96*apply(results_mediator[[i]],2,sd)
-    colnames(results_mediator_table[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+    # colnames(results_mediator_table[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+    colnames(results_mediator_table[[i]]) <- c("Total PAF","PAF_{Direct,M^j}","PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}","Direct PAF_{A->Y}")
     rownames(results_mediator_table[[i]]) <- c("Mean", "Lower 95% C.I.","Upper 95% C.I.")
     results_mediator_table[[i]]
 }
@@ -439,31 +449,31 @@ lower95CI <- list()
 upper95CI <- list()
 
      if( plot == "forestplot" ){
-         for(Nmed in 1:length(mediator)){
-               cochrane_from_rmeta[[Nmed]] <- structure(list(
-                      mean  = c(NA, results_mediator_table[[Nmed]][1,1], results_mediator_table[[Nmed]][1,2], results_mediator_table[[Nmed]][1,3], results_mediator_table[[Nmed]][1,4], results_mediator_table[[Nmed]][1,5] ),
-                      lower = c(NA, results_mediator_table[[Nmed]][2,1], results_mediator_table[[Nmed]][2,2], results_mediator_table[[Nmed]][2,3], results_mediator_table[[Nmed]][2,4], results_mediator_table[[Nmed]][2,5]),
-                      upper = c(NA, results_mediator_table[[Nmed]][3,1], results_mediator_table[[Nmed]][3,2], results_mediator_table[[Nmed]][3,3], results_mediator_table[[Nmed]][3,4], results_mediator_table[[Nmed]][3,5])),
-                      .Names = c("mean", "lower 95% C.I.", "upper 95% C.I."),
-                      row.names = c(NA, -6L),
-                      class = "data.frame")
-
-
-
-                    tabletext[[Nmed]]<-cbind(
-                    c("", "overall", "direct Sjolander", "indirect Sjolander","path specific", "overall Direct"),
-                    c("Mean", paste(round(results_mediator_table[[Nmed]][1,1],4)) , paste(round(results_mediator_table[[Nmed]][1,2],4)), paste(round(results_mediator_table[[Nmed]][1,3],4)), paste(round(results_mediator_table[[Nmed]][1,4],4)) ,paste(round(results_mediator_table[[Nmed]][1,5],4)) ),
-                    c("lower 95% C.I.", paste(round(results_mediator_table[[Nmed]][2,1],4)) , paste(round(results_mediator_table[[Nmed]][2,2],4)), paste(round(results_mediator_table[[Nmed]][2,3],4)), paste(round(results_mediator_table[[Nmed]][2,4],4)), paste(round(results_mediator_table[[Nmed]][2,5],4)) ),
-                    c("Upper 95% C.I.", paste(round(results_mediator_table[[Nmed]][3,1],4)), paste(round(results_mediator_table[[Nmed]][3,2],4)), paste(round(results_mediator_table[[Nmed]][3,3],4)), paste(round(results_mediator_table[[Nmed]][3,4],4)), paste(round(results_mediator_table[[Nmed]][3,5],4))))
-
-
-                     plotList[[Nmed]] <- forestplot(tabletext[[Nmed]],
-                                cochrane_from_rmeta[[Nmed]],new_page = TRUE,
-                                is.summary=c(TRUE,rep(FALSE,5)),
-                                clip=c(min(results_mediator_table[[Nmed]]) -0.1,max(results_mediator_table[[Nmed]]) +0.1),
-                                xlog=FALSE,
-                                col=fpColors(box= boxCol,lines = lineCol, summary = summaryCol))
-         }
+         # for(Nmed in 1:length(mediator)){
+         #       cochrane_from_rmeta[[Nmed]] <- structure(list(
+         #              mean  = c(NA, results_mediator_table[[Nmed]][1,1], results_mediator_table[[Nmed]][1,2], results_mediator_table[[Nmed]][1,3], results_mediator_table[[Nmed]][1,4], results_mediator_table[[Nmed]][1,5] ),
+         #              lower = c(NA, results_mediator_table[[Nmed]][2,1], results_mediator_table[[Nmed]][2,2], results_mediator_table[[Nmed]][2,3], results_mediator_table[[Nmed]][2,4], results_mediator_table[[Nmed]][2,5]),
+         #              upper = c(NA, results_mediator_table[[Nmed]][3,1], results_mediator_table[[Nmed]][3,2], results_mediator_table[[Nmed]][3,3], results_mediator_table[[Nmed]][3,4], results_mediator_table[[Nmed]][3,5])),
+         #              .Names = c("mean", "lower 95% C.I.", "upper 95% C.I."),
+         #              row.names = c(NA, -6L),
+         #              class = "data.frame")
+         #
+         #
+         #            tabletext[[Nmed]]<-cbind(
+         #            # c("", "overall", "direct Sjolander", "indirect Sjolander","path specific", "overall Direct"),
+         #            c("", "Total PAF", "PAF_{Direct,M^j}", "PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}", "Direct PAF_{A->Y}"),
+         #            c("Mean", paste(round(results_mediator_table[[Nmed]][1,1],4)) , paste(round(results_mediator_table[[Nmed]][1,2],4)), paste(round(results_mediator_table[[Nmed]][1,3],4)), paste(round(results_mediator_table[[Nmed]][1,4],4)) ,paste(round(results_mediator_table[[Nmed]][1,5],4)) ),
+         #            c("lower 95% C.I.", paste(round(results_mediator_table[[Nmed]][2,1],4)) , paste(round(results_mediator_table[[Nmed]][2,2],4)), paste(round(results_mediator_table[[Nmed]][2,3],4)), paste(round(results_mediator_table[[Nmed]][2,4],4)), paste(round(results_mediator_table[[Nmed]][2,5],4)) ),
+         #            c("Upper 95% C.I.", paste(round(results_mediator_table[[Nmed]][3,1],4)), paste(round(results_mediator_table[[Nmed]][3,2],4)), paste(round(results_mediator_table[[Nmed]][3,3],4)), paste(round(results_mediator_table[[Nmed]][3,4],4)), paste(round(results_mediator_table[[Nmed]][3,5],4))))
+         #
+         #
+         #             plotList[[Nmed]] <- forestplot(tabletext[[Nmed]],
+         #                        cochrane_from_rmeta[[Nmed]],new_page = TRUE,
+         #                        is.summary=c(TRUE,rep(FALSE,5)),
+         #                        clip=c(min(results_mediator_table[[Nmed]]) -0.1,max(results_mediator_table[[Nmed]]) +0.1),
+         #                        xlog=FALSE,
+         #                        col=fpColors(box= boxCol,lines = lineCol, summary = summaryCol))
+         # }
      } else if(plot == "bar"){
                 # if(errorbar == "errorbar" ){
                 #    for(Nmed in 1:length(mediator)){
@@ -537,7 +547,8 @@ upper95CI <- list()
                for( Nmed in 1:length(mediator)){
 
                       data[[Nmed]] <- data.frame(
-                      name=c("overall", "direct Sjolander", "indirect Sjolander","path specific", "overall Direct"),
+                      # name=c("overall", "direct Sjolander", "indirect Sjolander","path specific", "overall Direct"),
+                      name=c("Total PAF", "PAF_{Direct,M^j}", "PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}", "Direct PAF_{A->Y}"),
                       mean = results_mediator_table[[Nmed]][1,],
                       lower95CI = results_mediator_table[[Nmed]][2,],
                       upper95CI = results_mediator_table[[Nmed]][3,] )

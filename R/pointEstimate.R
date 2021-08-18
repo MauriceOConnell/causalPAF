@@ -4,12 +4,12 @@
 #' @param exposure The name of the exposure column variable within dataframe in text format e.g. "phys".
 #' @param mediator The name of the mediator column variables within dataframe in text format. There can be more than one mediator of interest. It can be a vector of mediators names within the dataframe e.g. c("subhtn","apob_apoa","whr").
 #' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
-#' @param response_model_mediators A model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.
-#' @param response_model_exposure A model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure and risk factors in the causal Bayesian network. See example in tutorial.
-#' @param in_outArg A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list contains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.
-#' @param Splines_outlist A list defined of same size and order of variables as defined in in_outArg[[2]]. If splines are to be used for variables listed in in_outArg[[2]], then the splines should be defined in the same order as variables appear in in_outArg[[2]]. It is necessary to list variables in in_outArg[[2]] without splines if no spline is to be applied.
+#' @param response_model_mediators A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.This model can be listed either as (1) an empty list ( response_model_mediators = list() ) or (2) the user can specify their own customised causal regression model(s) to use. When it is listed as an empty list the causalPAF package will fit the response_model_mediators regression model automatically based on the causal DAG supplied by the user in in_outArg. Alternatively, the user can specify the exact model(s) that the user wishes to use, these model(s) must be in list format (list() where length(response_model_mediators) == length(mediator) ), the same length as the parameter, mediator, with the user customised model for each mediator listed in the same order as in the parmeter, mediator, and if there is only one model, it must be listed each time within the list() so that length(response_model_mediators) == length(mediator).
+#' @param response_model_exposure A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure in the causal Bayesian network. This regression model will not adjust for mediators (exclude mediators) of the exposure in the regression model so that the total effect of the exposure on the response can be modelled. This model can be listed either as (1) an empty list ( response_model_exposure = list() ) or (2) the user can specify their own customised causal regression model to use. If specified as an empty list, list(), then the causalPAF function will define and fit the model automatically based on the causal DAG defined by the in_outArg parameter. Alternatively, the user can specify the exact model that the user wishes to use, this model must be in list format (list() where length(response_model_exposure) == 1 ), of length 1, assuming only one exposure of interest (other exposures can be risk factors) and the model must be defined within a list() since the package assumes a list() format is supplied. See example in tutorial. E.G. If physical exercise ("exer") in the example given in the diagram is the exposure. Then the regression would include all parents of "exer" (i.e. sex, region, educ, age) as well as risk factors at the same level of the causal Bayesian network (i.e. stress, smoke, diet, alcoh).
+#' @param in_outArg This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
+#' @param Splines_outlist A list defined of same size and order of variables as defined in in_outArg[[2]]. If splines are to be used for variables listed in in_outArg[[2]], then the splines should be defined in Splines_outlist in the same order as variables appear in in_outArg[[2]]. It is necessary to list variables in Splines_outlist the same as in in_outArg[[2]] without splines if no spline is to be applied. It should not be input as an empty list, list(), if no splines. A warning will show if input as an empty list requiring the user to populate Splines_outlist either the same as in_outArg[[2]] (if no splines) or in the same order as in_outArg[[2]] with splines (if splines).  See example in tutorial.
 #' @param splinesDefinedIn_in_outDAG Logical TRUE or FALSE indicating whether the user has defined splines in the causal DAG, in_out, if TRUE. If FALSE and splines are defined in Splines_outlist_Var, then it is necessary for the package to populate the in_out DAG with splines listed in Splines_outlist_Var.
-#' @param model_listArg is a list of models fitted for each of the variables in in_out$outlist based on its parents given in in_out$inlist. By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.
+#' @param model_listArg is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\$outlist ) based on its parents given in in_outArg[[1]] ( or in_out\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the causalPAF package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.
 #' @param weights Column of weights for case control matching listed in the same order as the patients in the data e.g. weights = strokedata$weights.
 #' @param NumSimulation This is the number of simulatons requested by the user to estimate integrals. The larger the number of simulations the more accurate the results but the longer the code takes to run. Therefore the user may wish to balance speed with accuracy depending on which is of more value in the specific context of interest. The integrals for continuous variables are estimated using simulation methods.
 #' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.
@@ -17,7 +17,7 @@
 #' @export
 #' @import splines MASS stats utils
 #' @keywords models Regression Population Attributable Fraction
-#' @return Estimates point estimates for 5 results that are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (3)Indirect Effect Population Attributable Fraction (PAF) using  Sjolanders definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
+#' @return Estimates point estimates for 5 results that are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using  alternative definition, (3)Indirect Effect Population Attributable Fraction (PAF) using  alternatice definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
 #' @examples \dontrun{
 #' # I don't want you to run this
 #' }
@@ -68,6 +68,13 @@ pointEstimate <- function(dataframe,
                           # # custom = "+ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) "
 
 
+
+                          ## If USER WANTS TO FIT OWN MODELS
+                          # response_model_mediators = response_vs_mediator
+                          # response_model_exposure = response_vs_phys
+                          # model_listArg = model_listArgFit
+
+
 # TestpointEstimate  <- pointEstimate(dataframe = stroke_reduced,
 #                                     exposure="phys",
 #                                     mediator=c("subhtn","apob_apoa","whr"),
@@ -106,16 +113,18 @@ pointEstimate <- function(dataframe,
 # library(splines)
 
 
-results_subhtn <- matrix(nrow= 1, ncol=5)
-colnames(results_subhtn) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
-
-
-results_whr <- matrix(nrow= 1, ncol=5)
-colnames(results_whr) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
-
-
-results_apob_apoa <- matrix(nrow= 1, ncol=5 )
-colnames(results_apob_apoa) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+# results_subhtn <- matrix(nrow= 1, ncol=5)
+# # colnames(results_subhtn) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+# colnames(results_subhtn) <- c("Total PAF","PAF_{Direct,M^j}","PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}","Direct PAF_{A->Y}")
+#
+# results_whr <- matrix(nrow= 1, ncol=5)
+# # colnames(results_whr) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+# colnames(results_whr) <- c("Total PAF","PAF_{Direct,M^j}","PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}","Direct PAF_{A->Y}")
+#
+#
+# results_apob_apoa <- matrix(nrow= 1, ncol=5 )
+# # colnames(results_apob_apoa) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+# colnames(results_apob_apoa) <- c("Total PAF","PAF_{Direct,M^j}","PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}","Direct PAF_{A->Y}")
 
 
 #####################
@@ -126,8 +135,10 @@ results_mediatorPointEstimate <- list()
 for(i in 1:length(mediator)){
   # results_mediatorPointEstimate[[i]] <- matrix(nrow= dataframe,ncol=5)
   results_mediatorPointEstimate[[i]] <- matrix(nrow = 1,ncol=5)
-  colnames(results_mediatorPointEstimate[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+  # colnames(results_mediatorPointEstimate[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+  colnames(results_mediatorPointEstimate[[i]]) <- c("Total PAF","PAF_{Direct,M^j}","PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}","Direct PAF_{A->Y}")
 }
+
 
 model_list_usePointEstimate <- vector(mode = "list", length = length(in_outArg[[2]]) )
 model_list_evalPointEstimate <- vector(mode = "list", length = length(in_outArg[[2]]) )
@@ -403,32 +414,101 @@ eval_make_DAG_output <- eval_make_DAG(data = dataframe,
 
 # Eval_regressionExposure_listReturn <- eval_make_DAG_output_regressionExposure_listReturn
 
-for(i in 1:length(eval_make_DAG_output$regressionExposure_listReturn) ){
 
-                  # eval(parse(text=model_list_usePointEstimate[[i]]))
-                  eval(parse(text = eval_make_DAG_output$regressionExposure_listReturn[[i]]))
-                  # eval(parse(text = eval_make_DAG_output_regressionExposure_listReturn[[i]]))
-                  # model_list_evalPointEstimate[[i]] <- model_list_inputPointEstimate[[i]]
-                  # THIS IS HOW THE REGRESSION IS CALLED WITHIN eval_make_DAG.R
-                  make_DAG_output$resultExposure[[i]] <- make_DAG_output$resultExposure[[i]]
+  # response_model_exposure
+  # response_model_mediators
+
+###############################################
+# if( length(response_model_exposure) == 0 ){
+#
+#         for(i in 1:length(eval_make_DAG_output$regressionExposure_listReturn) ){
+#
+#                   # eval(parse(text=model_list_usePointEstimate[[i]]))
+#                   eval(parse(text = eval_make_DAG_output$regressionExposure_listReturn[[i]]))
+#                   # eval(parse(text = eval_make_DAG_output_regressionExposure_listReturn[[i]]))
+#                   # model_list_evalPointEstimate[[i]] <- model_list_inputPointEstimate[[i]]
+#                   # THIS IS HOW THE REGRESSION IS CALLED WITHIN eval_make_DAG.R
+#                   make_DAG_output$resultExposure[[i]] <- make_DAG_output$resultExposure[[i]]
+#
+#             }
+#
+# }else if( length(response_model_exposure) != 0 ){
+#
+#                     make_DAG_output$resultExposure <- list( eval_make_DAG_output$regressionExposure_listReturn )
+#
+#
+# }else{
+#   stop("Stopped since error in pointEstimate() as length(response_model_mediators) is neither != 0 or == 0.")
+# }
+
+  for(i in 1:length(eval_make_DAG_output$regressionExposure_listReturn) ){
+
+                  if( length(response_model_exposure) == 0){
+
+                          # eval(parse(text=model_list_usePointEstimate[[i]]))
+                          eval(parse(text = eval_make_DAG_output$regressionExposure_listReturn[[i]]))
+                          # eval(parse(text = eval_make_DAG_output_regressionExposure_listReturn[[i]]))
+                          # model_list_evalPointEstimate[[i]] <- model_list_inputPointEstimate[[i]]
+                          # THIS IS HOW THE REGRESSION IS CALLED WITHIN eval_make_DAG.R
+                          make_DAG_output$resultExposure[[i]] <- make_DAG_output$resultExposure[[i]]
+
+                  }else if( length(response_model_exposure) != 0 ){
+
+                          make_DAG_output$resultExposure[[i]] <- eval_make_DAG_output$regressionExposure_listReturn[[i]]
+
+                  }else{
+                    stop("Error in pointEstimate with length(response_model_exposure).")
+                  }
 
             }
+
+##################################################
+# if( length(response_model_mediators ) == 0 ){
+#
+#         for(i in 1:length(eval_make_DAG_output$regressionMediator_listReturn) ){
+#
+#                   # eval(parse(text=model_list_usePointEstimate[[i]]))
+#                   eval(parse(text = eval_make_DAG_output$regressionMediator_listReturn[[i]]))
+#                   # eval(parse(text = eval_make_DAG_output_regressionMediator_listReturn[[i]]))
+#                   # model_list_evalPointEstimate[[i]] <- model_list_inputPointEstimate[[i]]
+#                   make_DAG_output$resultMediator[[i]] <- make_DAG_output$resultMediator[[i]]
+#
+#             }
+#
+# }else if( length(response_model_mediators ) != 0 ){
+#
+#               make_DAG_output$resultMediator <- list( eval_make_DAG_output$regressionMediator_listReturn )
+#
+# }else{
+#   stop("Stopped since error in pointEstimate() as length(response_model_mediators) is neither != 0 or == 0.")
+# }
 
 
 # Eval_regressionMediator_listReturn <- eval_make_DAG_output_regressionMediator_listReturn
 
 for(i in 1:length(eval_make_DAG_output$regressionMediator_listReturn) ){
 
-                  # eval(parse(text=model_list_usePointEstimate[[i]]))
-                  eval(parse(text = eval_make_DAG_output$regressionMediator_listReturn[[i]]))
-                  # eval(parse(text = eval_make_DAG_output_regressionMediator_listReturn[[i]]))
-                  # model_list_evalPointEstimate[[i]] <- model_list_inputPointEstimate[[i]]
-                  make_DAG_output$resultMediator[[i]] <- make_DAG_output$resultMediator[[i]]
+
+                  if( length( response_model_mediators ) == 0){
+
+                          # eval(parse(text=model_list_usePointEstimate[[i]]))
+                          eval(parse(text = eval_make_DAG_output$regressionMediator_listReturn[[i]]))
+                          # eval(parse(text = eval_make_DAG_output_regressionMediator_listReturn[[i]]))
+                          # model_list_evalPointEstimate[[i]] <- model_list_inputPointEstimate[[i]]
+                          make_DAG_output$resultMediator[[i]] <- make_DAG_output$resultMediator[[i]]
+
+                  }else if( length( response_model_mediators ) != 0 ){
+
+                          make_DAG_output$resultMediator[[i]] <- eval_make_DAG_output$regressionMediator_listReturn[[i]]
+
+                  }else{
+                    stop("Error in pointEstimate with length( response_model_mediators ).")
+                  }
 
             }
 
 
-
+#####################################
 
 ###############
 ################
@@ -496,7 +576,8 @@ response_vs_physPointEstimate <- make_DAG_output$resultExposure
   results_mediator_simulationStorePointEstimate <- list()
   for(i in 1:length(mediator)){
     results_mediator_simulationStorePointEstimate[[i]] <- matrix(nrow = NumSimulation,ncol=5)
-    colnames(results_mediator_simulationStorePointEstimate[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+    # colnames(results_mediator_simulationStorePointEstimate[[i]]) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+    colnames(results_mediator_simulationStorePointEstimate[[i]]) <- c("Total PAF","PAF_{Direct,M^j}","PAF_{Indirect,M^j}","PS-PAF_{A->M^j=>Y}","Direct PAF_{A->Y}")
   }
 
   for(med in 1:length(results_mediatorPointEstimate) ){

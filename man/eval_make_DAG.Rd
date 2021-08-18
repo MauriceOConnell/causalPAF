@@ -17,7 +17,7 @@ eval_make_DAG(
 \arguments{
 \item{data}{A wide format data containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.}
 
-\item{regressionExposure}{Regression of respsonse given exposure based on canonical adjustment set output from function make_DAG.R.}
+\item{regressionExposure}{Regression of respsonse given exposure based on adjustment set output from function make_DAG.R.}
 
 \item{regressionMediator}{Regression of respsonse given exposure (mediator as exposoure) based on canonical adjustment set output from function make_DAG.R.}
 

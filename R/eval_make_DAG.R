@@ -7,7 +7,7 @@
 #' Causal Bayesian networks have a local Markov property that the conditional probability distribution of any node Xj, given values
 #' for the other variables in the network, only depends on the values $x_{pa}_{j}$ of the parent nodes.
 #' @param data A wide format data containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.
-#' @param regressionExposure Regression of respsonse given exposure based on canonical adjustment set output from function make_DAG.R.
+#' @param regressionExposure Regression of respsonse given exposure based on adjustment set output from function make_DAG.R.
 #' @param regressionMediator Regression of respsonse given exposure (mediator as exposoure) based on canonical adjustment set output from function make_DAG.R.
 #' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
 #' @param response_model_mediators A model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.
@@ -183,6 +183,7 @@ eval_make_DAG <- function(data, regressionExposure , regressionMediator, respons
                    #
                    # mediator
 
+                   # WHAT IF USER DEFINES response_model_mediators AND ONLY DEFINES ONE MODEL FOR 3 MEDIATORS??
                    regressionMediator_listReturn <- response_model_mediators
                    # return(model_listReturn)
         } else{

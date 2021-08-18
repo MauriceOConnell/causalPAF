@@ -1,13 +1,13 @@
-#' @title Sequential Population Attributable Fraction in a Bayesian Network.
+#' @title Sequential Population Attributable Fraction in a Bayesian Network. Patients are listed in rows with variables listed in columns.
 #' @description Calculates and plots sequential population attributbale fractions (PAF) under a Bayesian network struture.
 #' @param dataframe A wide format dataframe containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.
-#' @param model_list_var is a list of models fitted for each of the variables in in_out$outlist based on its parents given in in_out$inlist. By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg. See tutorial for further examples.
+#' @param model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based on its parents given in in_outDAG$inlist. By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_list_var'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outDAG. See tutorial for further examples.
 #' @param weights Column of weights for case control matching listed in the same order as the patients in the data e.g. from tutorial weights = strokedata$weights.
-#' @param in_outDAG A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list contains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.
+#' @param in_outDAG This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
 #' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
 #' @param NumOrderRiskFactors is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte-Carlo sequential attributable fractions for each random permutation.
 #' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.
-#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interactin terms. See tutorial for examples.
+#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interaction terms. See tutorial for examples.
 #' @export
 #' @import stats MASS splines reshape2 ggplot2 gridExtra
 #' @keywords sequential population attributable fraction (PAF)
@@ -17,6 +17,22 @@
 #' # I don't want you to run this
 #' }
 sequential_PAF <- function(dataframe, model_list_var, weights = 1, in_outDAG, response, NumOrderRiskFactors,  addCustom = FALSE, custom =""   ){
+
+  # library(stats)
+  # library(MASS)
+  # library(splines)
+  # library(reshape2)
+  # library(ggplot2)
+  # library(gridExtra)
+  # dataframe = stroke_reduced
+  # model_list_var = model_list
+  # weights = stroke_reduced$weights
+  # in_outDAG = in_out
+  # response = "case"
+  # # NumOrderRiskFactors = 10000,
+  # NumOrderRiskFactors = 3
+  # addCustom = FALSE
+  # custom = ""
 
 
 ## TO AVOID THIS ERROR WHEN CHECKING PACKAGE
@@ -366,7 +382,7 @@ location <- risk_factor <- type <- value <- NULL
       ##################################################
       ### NEED TO SET OPTION TO SEED SEED IF WE WANT TO
       ##################################################
-      set.seed(27092019)
+      # set.seed(27092019)
       # SAF_mat <- matrix(0,nrow=10000,ncol=10)
       SAF_mat <- matrix(0,nrow = NumOrderRiskFactors,ncol = length(indicesExcludingResponse) )
       # SAF_mat_2 <- matrix(0,nrow=10000,ncol=10)
@@ -522,11 +538,17 @@ location <- risk_factor <- type <- value <- NULL
       varNamePlot <- vector(mode = "list", length = length( indicesExcludingResponse) )
       for( q in 1:length(indicesExcludingResponse) ){
 
+            ### NB WORKS WHEN USED DPLYR FILTER SO NEED TO USE DPLYR filter
+
             # TRY == as want exact match rather than %in% which will include partial matches
-            varNamePlot[[q]] <- ggplot(data=filter(SAF_summary, risk_factor == c( in_outDAG[[2]][q] )),
+            varNamePlot[[q]] <- ggplot(data = subset(SAF_summary, risk_factor == c( in_outDAG[[2]][q] )),
+            #varNamePlot[[q]] <- ggplot(data = dplyr::filter(SAF_summary, risk_factor == c( in_outDAG[[2]][q] )),
+             # varNamePlot[[q]] <- ggplot(data= as.data.frame( filter(SAF_summary, risk_factor == c( in_outDAG[[2]][q] )) )  ,
+            # varNamePlot[[q]] <- ggplot(data = test,
                                    aes(x = location, y = value,  colour = type) ) +
                                    theme_classic() +
                                    geom_point(,size=4) +
+                                   # geom_point(size=4) +
                                    geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2,width= 0.5) +
                                    scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10)) +
                                    scale_y_continuous("Average Sequential PAF") + theme(legend.position = "none") +
