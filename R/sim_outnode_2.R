@@ -1,4 +1,4 @@
-#' @title Set a variable defined in col_num to its reference level (or otherwise 0 i.e. symbolising the absence of the risk factor) and then simulate all it's cildren.
+#' @title Set a variable defined in col_num to its reference level (or otherwise 0 i.e. symbolising the absence of the risk factor) and then simulate all it's children.
 #' @description Set variable defined in col_num to its reference level or otherwise to 0. Then simulate each variable if there is a direct arrow from the variable thats set to its reference value (or otherwise 0) to that variable i.e. if the variable set to its reference level (or otherwise 0) is a parent  of a variable simulate the child.
 #' @param dataframe  A wide format dataframe containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.
 #' @param col_num Column number of variable in dataframe current_mat that is to be set to its reference level (if a factor) or to 0 otherwise i.e. the absence of the risk factor.

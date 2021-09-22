@@ -1,21 +1,106 @@
-#' @title Sequential Population Attributable Fraction in a Bayesian Network. Patients are listed in rows with variables listed in columns.
-#' @description Calculates and plots sequential population attributbale fractions (PAF) under a Bayesian network struture.
+#' @title Sequential Population Attributable Fractions in a Bayesian Network.
+#'
+#' @description 'sequential_PAF' calculates and plots sequential population attributale fractions (PAF) under a Bayesian network structure.
+#'
+#' @details Patients are listed in rows with variables (i.e. exposure, risk factors, confounders, outcome) listed in columns.
 #' @param dataframe A wide format dataframe containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.
-#' @param model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based on its parents given in in_outDAG$inlist. By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_list_var'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outDAG. See tutorial for further examples.
+#' @param model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based on its parents given in in_outDAG$inlist.
+#'        By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg.
+#'        See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_list_var'' with their own fitted
+#'        models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the
+#'        second list of in_outDAG. See tutorial for further examples.
 #' @param weights Column of weights for case control matching listed in the same order as the patients in the data e.g. from tutorial weights = strokedata$weights.
-#' @param in_outDAG This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
+#' @param in_outDAG This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first
+#'        list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are
+#'        to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
 #' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
-#' @param NumOrderRiskFactors is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte-Carlo sequential attributable fractions for each random permutation.
-#' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.
-#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interaction terms. See tutorial for examples.
+#' @param NumOrderRiskFactors is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte-Carlo sequential
+#'        attributable fractions for each random permutation.
+#' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include
+#'        splines.
+#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be
+#'        included within the interaction terms. See tutorial for examples.
 #' @export
 #' @import stats MASS splines reshape2 ggplot2 gridExtra
 #' @keywords sequential population attributable fraction (PAF)
-#' @return \item{plot }{ Returns a plot showing the estimated sequential attributable fractions, by position in elmination order. 95 percent confidence intervals are plotted so that we can be 95 percent confident the true estimate (that would be calculated from the procedure when the number of simulations m approaches infinity) lies in the Monte Carlo interval around the point estimate. The estimates shaded red correspond to a Bayesian network with indirect effects, whereas the estimates shaded blue correspond to the Bayesian network with no indirect effects modelled. Note that the Monte Carlo error at position k incorporates variation due to random selection of the set of risk factors/exposures that are intervened on in stages 1,...k - 1, and also variation based on the recursive simulation of the disease response. }
-#' \item{SAF_summary }{Returns the data used for the plot containing both the Bayesian network (labelled Bayesian network) with indirect effects modelled and a model (labelled usual) with no indirect effects modelled.}
-#' @examples \dontrun{
-#' # I don't want you to run this
+#' @return \item{plot }{ Returns a plot showing the estimated sequential attributable fractions, by position in elmination order. 95 percent confidence intervals are
+#'          plotted so that we can be 95 percent confident the true estimate (that would be calculated from the procedure when the number of simulations m approaches
+#'          infinity) lies in the Monte Carlo interval around the point estimate. The estimates shaded red correspond to a Bayesian network with indirect effects,
+#'          whereas the estimates shaded blue correspond to the Bayesian network with no indirect effects modelled. Note that the Monte Carlo error at position k
+#'          incorporates variation due to random selection of the set of risk factors/exposures that are intervened on in stages 1,...k - 1, and also variation based
+#'          on the recursive simulation of the disease response. }
+#' \item{SAF_summary }{Returns the data used for the plot containing both the Bayesian network (labelled Bayesian network) with indirect effects modelled and a model
+#'      (labelled usual) with no indirect effects modelled.}
+#' @examples
+#' stroke_reduced <- strokedata
+#'
+#' in_phys <- c("subeduc","moteduc","fatduc")
+#' in_ahei <- c("subeduc","moteduc","fatduc")
+#' in_nevfcur <- c("subeduc","moteduc","fatduc")
+#' in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+#' in_global_stress2 <- c("subeduc","moteduc","fatduc")
+#' in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                  "global_stress2")
+#' in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                       "global_stress2")
+#' in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                   "global_stress2")
+#' in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                      "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+#' in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                   "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+#' in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#' "global_stress2", "apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+#'
+#' in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,
+#'                in_htnadmbp, in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,
+#'                in_dmhba1c2,in_case),
+#'                outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2",
+#'                          "htnadmbp","apob_apoatert", "whrs2tert","cardiacrfcat",
+#'                          "dmhba1c2","case"))
+#'
+#'
+#' if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reorderd){
+#'   print("Your in_out DAG is a Markov DAG.")
+#' } else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reorderd ) {
+#'
+#'   in_out <- checkMarkovDAG(in_out)[[2]]
+#'
+#'   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
+#'           in_out list so that all parent variables come before descendants.")
+#' } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
+#'                causalPAF package cannot be applied for non-Markov DAGs.")}
+#'
+#' w <- rep(1,nrow(stroke_reduced))
+#' w[stroke_reduced$case==0] <- 0.9965
+#' w[stroke_reduced$case==1] <- 0.0035
+#'
+#' stroke_reduced$weights <- w
+#'
+#' sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+#'                                  model_list_var = list(),
+#'                                  weights = w,
+#'                                  in_outDAG = in_out,
+#'                                  response = "case",
+#'                                  NumOrderRiskFactors = 3,
+#'                                  addCustom = TRUE,
+#'                                  custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
+#'
+#' sequentialPAF$SAF_summary
+#'
+#' \dontrun{
+#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
+#' # This can take time to run.
+#' sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+#'                                  model_list_var = list(),
+#'                                  weights = w,
+#'                                  in_outDAG = in_out,
+#'                                  response = "case",
+#'                                  NumOrderRiskFactors = 1000,
+#'                                  addCustom = TRUE,
+#'                                  custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
 #' }
+
 sequential_PAF <- function(dataframe, model_list_var, weights = 1, in_outDAG, response, NumOrderRiskFactors,  addCustom = FALSE, custom =""   ){
 
   # library(stats)
@@ -24,15 +109,15 @@ sequential_PAF <- function(dataframe, model_list_var, weights = 1, in_outDAG, re
   # library(reshape2)
   # library(ggplot2)
   # library(gridExtra)
-  # dataframe = stroke_reduced
-  # model_list_var = model_list
-  # weights = stroke_reduced$weights
-  # in_outDAG = in_out
-  # response = "case"
-  # # NumOrderRiskFactors = 10000,
-  # NumOrderRiskFactors = 3
-  # addCustom = FALSE
-  # custom = ""
+  #
+  #                                dataframe = stroke_reduced
+  #                                model_list_var = list()
+  #                                weights = w
+  #                                in_outDAG = in_out
+  #                                response = "case"
+  #                                NumOrderRiskFactors = 1000
+  #                                addCustom = TRUE
+  #                                custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
 
 
 ## TO AVOID THIS ERROR WHEN CHECKING PACKAGE
@@ -348,6 +433,7 @@ location <- risk_factor <- type <- value <- NULL
 
       indicesExcludingResponse <- setdiff((1:length(in_outDAG[[2]]) ),response_col_num )
 
+
       ## THIS MEANS THE response variable needs to be listed last
       # the_order <- col_list[1:10][sample(1:10,10)]    #  order of columns in calculating sequential attributable fractions
       the_order <- col_list[indicesExcludingResponse][sample(indicesExcludingResponse, length(indicesExcludingResponse) )]    #  order of columns in calculating sequential attributable fractions
@@ -377,7 +463,6 @@ location <- risk_factor <- type <- value <- NULL
       SAF <- SAF/sum(w*sim_disease_current_population)
       SAF <- SAF[reverse_order]
 
-
       # now try looping this
       ##################################################
       ### NEED TO SET OPTION TO SEED SEED IF WE WANT TO
@@ -399,7 +484,9 @@ location <- risk_factor <- type <- value <- NULL
               # reverse_order <- numeric(10)
               reverse_order <- numeric( length(indicesExcludingResponse) )
               # for(j in 1:10) reverse_order[j] <- (1:10)[the_order==col_list[j]]  # where was col_list[i] in this calculation; needed to pick off sequential PAFs
-              for(j in 1:length(indicesExcludingResponse) ) reverse_order[j] <- (1:length(indicesExcludingResponse) )[the_order == col_list[j]]  # where was col_list[i] in this calculation; needed to pick off sequential PAFs
+              for(j in 1:length(indicesExcludingResponse) ){
+                    reverse_order[j] <- (1:length(indicesExcludingResponse) )[the_order == col_list[j]]  # where was col_list[i] in this calculation; needed to pick off sequential PAFs
+              }
 
               # current_mat <- stroke_reduced
               current_mat <- dataframe

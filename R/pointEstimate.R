@@ -62,7 +62,7 @@ pointEstimate <- function(dataframe,
                           # splinesDefinedIn_in_outDAG = TRUE
                           # model_listArg = list()
                           # weights = stroke_reduced$weights
-                          # NumSimulation = 2
+                          # NumSimulation = 200
                           # addCustom = TRUE
                           # custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" # need to update make_formula() so that it runs without needing ~ first
                           # # custom = "+ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) "

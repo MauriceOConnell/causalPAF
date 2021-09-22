@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_outnode.R
 \name{sim_outnode}
 \alias{sim_outnode}
-\title{Set a variable defined in col_num to its reference level (or otherwise 0 i.e. symbolising the absence of the risk factor) and then simulate all it's cildren.}
+\title{Set a variable defined in col_num to its reference level (or otherwise 0 i.e. symbolising the absence of the risk factor) and then simulate all it's children.}
 \usage{
 sim_outnode(dataframe, col_num, current_mat, in_outArg, col_list, model_list)
 }
