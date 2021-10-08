@@ -7,30 +7,53 @@
 checkMarkovDAG(in_out)
 }
 \arguments{
-\item{in_out}{A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list conttains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.}
+\item{in_out}{A list of length 2. The first list contains a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome. The second list contains a list of a single name of exposure or risk factor or outcome in form of characters. See tutorial examples for examples.}
 }
 \value{
 \item{IsMarkovDAG }{Returns a logical TRUE or FALSE whether it is a Markov DAG provided in_out is input as described in the documentation.}
-\item{in_out}{The in_out list supplied in the function is returns the same of the input if IsMarkovDAG is returned TRUE. If IsMarkovDAG is returned FALSE the order of the in_out list is updated such that all parent variables come before ancestors in both i_out[[1]] and in_out[[2]]. This corrects any error where variables from a given Markov Bayesiand DAG are input to the package in the incorrect order.}
-\item{Reorderd}{Reorderd is FALSE if in_out is left in the same order as input. Reorderd is FALSE if in_out has been reordered so that parents of variables could before descendants.}
+\item{in_out}{The in_out list supplied in the function is returns the same of the input if IsMarkovDAG is returned TRUE. If IsMarkovDAG is returned FALSE the order of the in_out list is updated such that all parent variables come before ancestors in both i_out[[1]] and in_out[[2]]. This corrects any error where variables from a given Markov Bayesian DAG are input to the package in the incorrect order.}
+\item{Reordered}{Reordered is FALSE if in_out is left in the same order as input. Reordered is FALSE if in_out has been reordered so that parents of variables could before descendants.}
 }
 \description{
-The functions checks if the Markov condition holds for the Directed Acyclic Graph (DAG) defined. Sometimes called the Markov assumption, is an assumption made in Bayesian probability theory, that every node in a Bayesian network is conditionally independent of its nondescendents, given its parents. In other words, it is assumed that a node has no bearing on nodes which do not descend from it. This is equivalent to stating that a node is conditionally independent of the entire network, given its Markov blanket. The related Causal Markov condition states that, conditional on the set of all its direct causes, a node is independent of all variables which are not direct causes or direct effects of that node.
+The functions checks if the Markov condition holds for the Directed Acyclic Graph (DAG) defined. Sometimes called the Markov assumption, is an assumption made in Bayesian probability theory, that every node in a Bayesian network is conditionally independent of its nondescendants, given its parents. In other words, it is assumed that a node has no bearing on nodes which do not descend from it. This is equivalent to stating that a node is conditionally independent of the entire network, given its Markov blanket. The related Causal Markov condition states that, conditional on the set of all its direct causes, a node is independent of all variables which are not direct causes or direct effects of that node.
 }
 \examples{
-\dontrun{
-# I don't want you to run this
+stroke_reduced <- strokedata
+
+in_phys <- c("subeduc","moteduc","fatduc")
+in_ahei <- c("subeduc","moteduc","fatduc")
+in_nevfcur <- c("subeduc","moteduc","fatduc")
+in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+in_global_stress2 <- c("subeduc","moteduc","fatduc")
+in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+                 "global_stress2")
+in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+                      "global_stress2")
+in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+                  "global_stress2")
+in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+                     "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+                  "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+"global_stress2", "apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+
+in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,
+               in_htnadmbp, in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,
+               in_dmhba1c2,in_case),
+               outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2",
+                         "htnadmbp","apob_apoatert", "whrs2tert","cardiacrfcat",
+                         "dmhba1c2","case"))
+
+
+if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
+  print("Your in_out DAG is a Markov DAG.")
+} else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
+
+  in_out <- checkMarkovDAG(in_out)[[2]]
+
+  print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
+          in_out list so that all parent variables come before descendants.")
+} else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
+               causalPAF package cannot be applied for non-Markov DAGs.")}
 }
-in_vars = c("subeduc","moteduc","fatduc")
-outvar = c("phys")
-make_formula(in_vars,outvar)
-}
-\keyword{Acyclic}
-\keyword{Attributable}
-\keyword{Bayesian}
-\keyword{Directed}
-\keyword{Fraction}
-\keyword{Graph}
-\keyword{Markov}
-\keyword{Population}
-\keyword{models}

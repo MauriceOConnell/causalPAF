@@ -9,7 +9,7 @@
 #' @param Subset_adjustmentSet is a list of length length( in_outDAG_SplinesRemoved[[2]] ). It is calculated within the function make_DAG_AdjustmentSets_in_out.R. If all indices of Subset_adjustmentSet[[]] are empty this means that there was no updates to the adjustment sets for each of in_outDAG_SplinesRemoved[[1]][[1:length( in_outDAG_SplinesRemoved[[2]] )]] causal parents of each of in_outDAG_SplinesRemoved[[2]]  and this should coincide with count = length( in_outDAG_SplinesRemoved[[2]] ). If count < length( in_outDAG_SplinesRemoved[[2]] ), then ( length( in_outDAG_SplinesRemoved[[2]] ) - count) adjustment sets have been updated in in_outDAG_SplinesRemoved[[1]][[1:length( in_outDAG_SplinesRemoved[[2]] )]] such that they are valid adjustment sets for each of their outcomes in in_outDAG_SplinesRemoved[[2]] respectively. And the changes to the adjustments sets are stored in each of Subset_adjustmentSet[[1:length( in_outDAG_SplinesRemoved[[2]] )]], where the non-empty index, say i in Subset_adjustmentSet[[i]],  corresponds to the variable in in_outDAG_SplinesRemoved[[2]][[i]] that has had its adjustment set in in_outDAG_SplinesRemoved[[1]][[i]] updated.
 #' @export
 #' @import MASS stats utils
-#' @keywords causal DAG with splines added in
+#' @keywords internal
 #' @return Returns in_outDAG with spline variables included
 
 addInSplinesTo_in_out <- function(in_outDAG , splinesVariables, in_outDAG_SplinesRemoved, Splines_outlist_Var,
@@ -17,11 +17,6 @@ addInSplinesTo_in_out <- function(in_outDAG , splinesVariables, in_outDAG_Spline
                                   count,
                                   Subset_adjustmentSet){
 
-
-
-      # splinesDefinedIn_in_outDAG
-      # count
-      # Subset_adjustmentSet[[i]]
 
 #########################################################################
 #########################################################################

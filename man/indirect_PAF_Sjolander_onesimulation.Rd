@@ -62,10 +62,4 @@ Sjolander introduced the ideas of mediation into the literature for PAF, definin
 \if{html}{\figure{CausalDAG.jpg} {options: width=100 alt="Causal Bayesian network DAG"} }
 \if{latex}{\figure{CausalDAG.jpg}{options: width=1in}}
 }
-\examples{
-\dontrun{
-# I don't want you to run this
-}
-}
-\keyword{Regression}
-\keyword{models}
+\keyword{internal}

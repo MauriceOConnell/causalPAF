@@ -35,9 +35,4 @@ Returns in_outDAG with spline variables included
 \description{
 Creates a DAG for input into package Dagitty to identify adjustmentSets given exposure and outcome
 }
-\keyword{DAG}
-\keyword{added}
-\keyword{causal}
-\keyword{in}
-\keyword{splines}
-\keyword{with}
+\keyword{internal}

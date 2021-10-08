@@ -8,13 +8,13 @@
 #' for the other variables in the network, only depends on the values $x_{pa}_{j}$ of the parent nodes.
 #' @param data A wide format data containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.
 #' @param in_out This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
-#' @param model_list is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\$outlist ) based on its parents given in in_outArg[[1]] ( or in_out\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the causalPAF package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.
+#' @param model_list is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\$outlist ) based on its parents given in in_outArg[[1]] ( or in_out\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the causalPAF package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response variable. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.
 #' @param w Column of weights for case control matching listing in same order as patients in data.
 #' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.
-#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interactin terms. See tutorial for examples.
+#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interaction terms. See tutorial for examples.
 #' @export
 #' @import splines MASS stats forestplot utils grid magrittr checkmate
-#' @keywords models Regression
+#' @keywords internal
 #' @return \itemize{
 #' \item{model_listReturn[[1]] }{model list A}
 #' \item{model_listReturn[[2]] }{model list B}
@@ -28,18 +28,11 @@
 #' \item{model_listReturn[[10]] }{model list J}
 #' \item{model_listReturn[[11]] }{model list K}
 #' }
-#' @examples \dontrun{
-#' # I don't want you to run this
-#' }
-#' in_vars = c("subeduc","moteduc","fatduc")
-#' outvar = c("phys")
-#' make_formula(in_vars,outvar,addCustom = FALSE, custom = "~ regionnn7 + ")
+
 eval_make_formula <- function(data,in_out, model_list, w, addCustom = FALSE, custom = ""){
-# addCustom = TRUE, custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
+
   count <- 0
   if( ( length(model_list) == 0 ) & (count == 0) ){
-
-    #test <- list()
 
     data_text <- deparse(substitute(data))
 

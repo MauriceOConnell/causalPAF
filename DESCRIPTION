@@ -1,31 +1,46 @@
-Package: causalPAF
 Type: Package
-Title: Causal Effect for Population Attributatble Fractions (PAF)
-Version: 0.1.0
-Author: Maurice O'Connell, John Ferguson
-Maintainer: Maurice O'Connell <maurice.oconnell@nuigalway.ie>, John Ferguson <john.ferguson@nuigalway.ie>
+Package: causalPAF
+Title: Causal Effect for Population Attributable Fractions (PAF)
+Version: 1.2.1
+Date: 2021-09-22
+Authors@R: 
+    c(person(given = "Maurice",
+             family = "O'Connell",
+             role = c("aut", "cph", "cre"),
+             email = "maurice.oconnell2@gmail.com",
+             comment = c(ORCID = "0000-0001-9658-495X")),
+      person(given = "John",
+             family = "Ferguson",
+             role = c("aut", "cph")))
 Description: Calculates population attributable fraction causal effects.
-License: GPL-2
+    The causalPAF package contains a suite of functions for causal
+    analysis calculations of population attributable fractions (PAF) given
+    a causal diagram which apply both: Pathway-specific population
+    attributable fractions (PS-PAFs) and Sequential population
+    attributable fractions.  Results are presentable in both table and
+    plot format.
+License: GPL (>=2)
+URL: https://github.com/MauriceOConnell/causalPAF
+BugReports: https://github.com/MauriceOConnell/causalPAF/issues
+Imports: 
+    checkmate,
+    dagitty,
+    dplyr,
+    forestplot,
+    ggdag,
+    ggplot2,
+    grid,
+    gridExtra,
+    magrittr,
+    MASS,
+    reshape2,
+    rlist,
+    splines,
+    stats,
+    utils
 Encoding: UTF-8
 LazyData: true
-Imports: 
- readxl, 
- utils,
- stats,
- dplyr,
- MASS,
- splines,
- forestplot,
- grid,
- magrittr,
- checkmate,
- ggplot2,
- rlist,
- dagitty,
- ggdag,
- reshape2,
- gridExtra
-Depends:
-Suggests:
- knitr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
+Suggests: 
+    spelling
+Language: en-US

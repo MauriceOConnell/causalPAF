@@ -7,7 +7,7 @@
 do_sim_sequentialPAF(colnum, current_mat, model)
 }
 \arguments{
-\item{colnum}{Column number of expsoure or risk factor of interest within the data frame. The data frame has cases in rows and variables in columns.}
+\item{colnum}{Column number of exposure or risk factor of interest within the data frame. The data frame has cases in rows and variables in columns.}
 
 \item{current_mat}{The data frame containing the data for which the model can be simulated with. For
 potential outcomes for example such as \eqn{Y_{A=0,M_{1},M_{2},M_{3}}} requires the exposure in this case
@@ -31,5 +31,4 @@ The model can be either a binary, continuous or an ordered factor response model
 # I don't want you to run this
 }
 }
-\keyword{Regression}
-\keyword{models}
+\keyword{internal}

@@ -9,20 +9,12 @@
 #' @param in_vars a list of character vectors of the parents of the exposure or risk factor or outcome which are either causes or confounders of the exposure or risk factor or outcome
 #' @param outvar list of a single name of exposure or risk factor or outcome in form of characters
 #' @param addCustom is a logical which is TRUE if a custom regression is to be added in or FALSE otherwise. The customised part is defined in the parameter "custom".
-#' @param custom custom must start and end as follows: "~  + " with custom values between ~ and +. Custom allows customised input into regresssion not stated already e.g. allow for interaction of variables not listed yet e.g. "~ regionnn7 x ns(eage,df=5)+esex x ns(eage,df=5) + "
+#' @param custom custom must start and end as follows: "~  + " with custom values between ~ and +. Custom allows customised input into regression not stated already e.g. allow for interaction of variables not listed yet e.g. "~ regionnn7 x ns(eage,df=5)+esex x ns(eage,df=5) + "
 #' @export
-#' @keywords models Regression
+#' @keywords internal
 #' @return \item{result }{result}
-#' @examples \dontrun{
-#' # I don't want you to run this
-#' }
-#' in_vars = c("subeduc","moteduc","fatduc")
-#' outvar = c("phys")
-#' make_formula(in_vars,outvar)
-make_formula <- function(in_vars,outvar, addCustom = FALSE, custom = ""){
 
-  # changed from this
-  # custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
+make_formula <- function(in_vars,outvar, addCustom = FALSE, custom = ""){
 
   # # Before update (which was working)
   # result <- paste(outvar,"~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ",in_vars[1])

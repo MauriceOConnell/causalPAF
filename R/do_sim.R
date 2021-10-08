@@ -5,7 +5,7 @@
 #' @export
 #' @import stats
 # #' @importsFrom stats formula predict filter lag
-#' @keywords models Regression
+#' @keywords internal
 #' @return \item{dataframe }{dataframe}
 #' @examples \dontrun{
 #' # I don't want you to run this

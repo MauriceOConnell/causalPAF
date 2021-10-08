@@ -33,13 +33,11 @@
 #' @export
 #' @import stats
 # #' @importsFrom stats formula predict filter lag
-#' @keywords models Regression
+#' @keywords internal
 #' @return \item{totalPAF }{total PAF}
 #' \item{directPAF}{direct PAF}
 #' \item{indirectPAF}{indirect PAF}
-#' @examples \dontrun{
-#' # I don't want you to run this
-#' }
+
 indirect_PAF_Sjolander_onesimulation <- function(data_frame, exposure, mediator,response,mediator_model,response_model,response_model_2,weights){
         mediator_outcomes <- c()
         for(i in 1:length(mediator_model)) mediator_outcomes[i] <-  as.character(formula(mediator_model[[i]]))[2]

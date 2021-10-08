@@ -22,5 +22,4 @@ Given a causal
 # I don't want you to run this
 }
 }
-\keyword{Regression}
-\keyword{models}
+\keyword{internal}

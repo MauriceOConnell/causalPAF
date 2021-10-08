@@ -7,25 +7,20 @@
 #' Causal Bayesian networks have a local Markov property that the conditional probability distribution of any node Xj, given values
 #' for the other variables in the network, only depends on the values $x_{pa}_{j}$ of the parent nodes.
 #' @param data A wide format data containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.
-#' @param regressionExposure Regression of respsonse given exposure based on adjustment set output from function make_DAG.R.
-#' @param regressionMediator Regression of respsonse given exposure (mediator as exposoure) based on canonical adjustment set output from function make_DAG.R.
+#' @param regressionExposure Regression of response given exposure based on adjustment set output from function make_DAG.R.
+#' @param regressionMediator Regression of response given exposure (mediator as exposure) based on canonical adjustment set output from function make_DAG.R.
 #' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
 #' @param response_model_mediators A model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.
 #' @param response_model_exposure A model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure and risk factors in the causal Bayesian network. See example in tutorial.
 #' @param w Column of weights for case control matching listing in same order as patients in data.
 #' @export
 #' @import splines MASS stats forestplot utils grid magrittr checkmate
-#' @keywords models Regression
+#' @keywords internal
 #' @return \itemize{
 #' \item{regressionExposure_listReturn }{model list regressionExposure_listReturn}
 #' \item{regressionMediator_listReturn }{model list regressionMediator_listReturn}
 #' }
-#' @examples \dontrun{
-#' # I don't want you to run this
-#' }
-#' in_vars = c("subeduc","moteduc","fatduc")
-#' outvar = c("phys")
-#' make_formula(in_vars,outvar,addCustom = FALSE, custom = "~ regionnn7 + ")
+
 eval_make_DAG <- function(data, regressionExposure , regressionMediator, response, response_model_mediators, response_model_exposure, w){
 
 
@@ -35,9 +30,8 @@ eval_make_DAG <- function(data, regressionExposure , regressionMediator, respons
 #############
 
 #####################
-## HAD ONLY STARTD THIS FUNCTION ON 30TH APRIL 2021 SO NEED TO START AGAIN FROM HERE
-## NEED TO USE make_DAG.R output and evaluaate it here
-## also nice in make_DAG.R to have plot look nice and have paretns on left of graph
+## NEED TO USE make_DAG.R output and evaluate it here
+## also nice in make_DAG.R to have plot look nice and have parents on left of graph
 #####################
 
 # resultExposure, resultMediator

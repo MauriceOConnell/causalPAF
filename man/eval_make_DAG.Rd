@@ -17,9 +17,9 @@ eval_make_DAG(
 \arguments{
 \item{data}{A wide format data containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.}
 
-\item{regressionExposure}{Regression of respsonse given exposure based on adjustment set output from function make_DAG.R.}
+\item{regressionExposure}{Regression of response given exposure based on adjustment set output from function make_DAG.R.}
 
-\item{regressionMediator}{Regression of respsonse given exposure (mediator as exposoure) based on canonical adjustment set output from function make_DAG.R.}
+\item{regressionMediator}{Regression of response given exposure (mediator as exposure) based on canonical adjustment set output from function make_DAG.R.}
 
 \item{response}{The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.}
 
@@ -44,13 +44,4 @@ which may be causes of two risk factors or a cause of risk factor and disease, a
 Causal Bayesian networks have a local Markov property that the conditional probability distribution of any node Xj, given values
 for the other variables in the network, only depends on the values $x_{pa}_{j}$ of the parent nodes.
 }
-\examples{
-\dontrun{
-# I don't want you to run this
-}
-in_vars = c("subeduc","moteduc","fatduc")
-outvar = c("phys")
-make_formula(in_vars,outvar,addCustom = FALSE, custom = "~ regionnn7 + ")
-}
-\keyword{Regression}
-\keyword{models}
+\keyword{internal}

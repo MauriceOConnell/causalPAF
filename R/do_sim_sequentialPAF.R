@@ -4,7 +4,7 @@
 #' causal analysis. For example, for an outcome \eqn{Y_{A,M}} with exposure A and mediators \eqn{M_{1}, M_{3}, \dots M_{K}}
 #' the function can measure potential outcomes such as \eqn{Y_{A=0,M_{1},M_{2},M_{3}}} or \eqn{Y_{A=0,M_{1},M_{2}=0,M_{3}=0}} when there are three mediators.
 #' The model can be either a binary, continuous or an ordered factor response model.
-#' @param colnum Column number of expsoure or risk factor of interest within the data frame. The data frame has cases in rows and variables in columns.
+#' @param colnum Column number of exposure or risk factor of interest within the data frame. The data frame has cases in rows and variables in columns.
 #' @param current_mat The data frame containing the data for which the model can be simulated with. For
 #' potential outcomes for example such as \eqn{Y_{A=0,M_{1},M_{2},M_{3}}} requires the exposure in this case
 #' to be pre set to zero i.e. \code{current_mat} should have the exposure \eqn{Y_{A=0}} set to zero if simulating
@@ -13,18 +13,12 @@
 #' @export
 #' @import stats
 # #' @importFrom stats formula predict filter lag
-#' @keywords models Regression
+#' @keywords internal
 #' @return \item{simulation }{simulation}
 #' @examples \dontrun{
 #' # I don't want you to run this
 #' }
 do_sim_sequentialPAF <- function(colnum,current_mat, model){
-
-        # browser()
-
-        # colnum <- col_list[i]
-        # current_mat
-        # model <- model_list[[i]]
 
         ## polr
         if(names(model)[2]=='zeta'){

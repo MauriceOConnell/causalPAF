@@ -13,7 +13,7 @@ make_formula(in_vars, outvar, addCustom = FALSE, custom = "")
 
 \item{addCustom}{is a logical which is TRUE if a custom regression is to be added in or FALSE otherwise. The customised part is defined in the parameter "custom".}
 
-\item{custom}{custom must start and end as follows: "~  + " with custom values between ~ and +. Custom allows customised input into regresssion not stated already e.g. allow for interaction of variables not listed yet e.g. "~ regionnn7 x ns(eage,df=5)+esex x ns(eage,df=5) + "}
+\item{custom}{custom must start and end as follows: "~  + " with custom values between ~ and +. Custom allows customised input into regression not stated already e.g. allow for interaction of variables not listed yet e.g. "~ regionnn7 x ns(eage,df=5)+esex x ns(eage,df=5) + "}
 }
 \value{
 \item{result }{result}
@@ -27,13 +27,4 @@ which may be causes of two risk factors or a cause of risk factor and disease, a
 Causal Bayesian networks have a local Markov property that the conditional probability distribution of any node Xj, given values
 for the other variables in the network, only depends on the values $x_{pa}_{j}$ of the parent nodes.
 }
-\examples{
-\dontrun{
-# I don't want you to run this
-}
-in_vars = c("subeduc","moteduc","fatduc")
-outvar = c("phys")
-make_formula(in_vars,outvar)
-}
-\keyword{Regression}
-\keyword{models}
+\keyword{internal}

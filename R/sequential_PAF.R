@@ -1,13 +1,13 @@
 #' @title Sequential Population Attributable Fractions in a Bayesian Network.
 #'
-#' @description 'sequential_PAF' calculates and plots sequential population attributale fractions (PAF) under a Bayesian network structure.
+#' @description 'sequential_PAF' calculates and plots sequential population attributable fractions (PAF) under a Bayesian network structure.
 #'
 #' @details Patients are listed in rows with variables (i.e. exposure, risk factors, confounders, outcome) listed in columns.
 #' @param dataframe A wide format dataframe containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.
 #' @param model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based on its parents given in in_outDAG$inlist.
 #'        By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg.
 #'        See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_list_var'' with their own fitted
-#'        models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the
+#'        models for each risk factor, mediator, exposure and response variable. But the order of these models must be in the same order of the variables in the
 #'        second list of in_outDAG. See tutorial for further examples.
 #' @param weights Column of weights for case control matching listed in the same order as the patients in the data e.g. from tutorial weights = strokedata$weights.
 #' @param in_outDAG This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first
@@ -22,8 +22,7 @@
 #'        included within the interaction terms. See tutorial for examples.
 #' @export
 #' @import stats MASS splines reshape2 ggplot2 gridExtra
-#' @keywords sequential population attributable fraction (PAF)
-#' @return \item{plot }{ Returns a plot showing the estimated sequential attributable fractions, by position in elmination order. 95 percent confidence intervals are
+#' @return \item{plot }{ Returns a plot showing the estimated sequential attributable fractions, by position in elimination order. 95 percent confidence intervals are
 #'          plotted so that we can be 95 percent confident the true estimate (that would be calculated from the procedure when the number of simulations m approaches
 #'          infinity) lies in the Monte Carlo interval around the point estimate. The estimates shaded red correspond to a Bayesian network with indirect effects,
 #'          whereas the estimates shaded blue correspond to the Bayesian network with no indirect effects modelled. Note that the Monte Carlo error at position k
@@ -60,9 +59,9 @@
 #'                          "dmhba1c2","case"))
 #'
 #'
-#' if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reorderd){
+#' if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
 #'   print("Your in_out DAG is a Markov DAG.")
-#' } else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reorderd ) {
+#' } else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
 #'
 #'   in_out <- checkMarkovDAG(in_out)[[2]]
 #'
@@ -99,6 +98,75 @@
 #'                                  NumOrderRiskFactors = 1000,
 #'                                  addCustom = TRUE,
 #'                                  custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
+#' }
+#'
+#'
+#'#######################################################################################
+#' # Alternatively, the user can supply a customised model_list_var parameter as follows:
+#' # Libraries must be loaded if fitting models outside of the causalPAF R package.
+#' library(MASS)
+#' library(splines)
+#'
+#' # model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based
+#' # on its parents given in in_outDAG$inlist. By default this is set to an empty list.
+#' # Alternatively the user can supply their custom fitted, model_list as follows, which should be
+#' # consistent with the causal structure.
+#' # Note it is important that model_listArg is defined as a list and in the same order and length
+#' # as the variables defined in in_outDAG[[2]].
+#'
+#' model_list <- list(
+#'  glm(formula = phys ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + moteduc
+#'   + fatduc, family = "binomial", data = stroke_reduced, weights = weights), # model 1 phys
+#'  polr(formula = ahei3tert ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, data = stroke_reduced, weights = weights), # model 2 ahei3tert
+#'  glm(formula = nevfcur ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, family = "binomial",data = stroke_reduced, weights = weights), # model 3 nevfcur
+#'  polr(formula = alcohfreqwk ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, data = stroke_reduced,weights = weights), # model 4 alcohfreqwk
+#'  glm(formula = global_stress2 ~ subeduc + regionnn7 * ns(eage,df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, family = "binomial",data = stroke_reduced,
+#'  weights = weights), # model 5 global_stress2
+#'  glm(formula = htnadmbp ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  family = "binomial",data = stroke_reduced, weights = weights), # model 6 htnadmbp
+#'  polr(formula = apob_apoatert ~ regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  subeduc + moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  data = stroke_reduced,weights = weights), # model 7 apob_apoatert
+#'  polr(formula = whrs2tert ~ regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + subeduc +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  data = stroke_reduced, weights = weights), # model 8 whrs2tert
+#'  glm(formula = cardiacrfcat ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp, family = "binomial",
+#'  data = stroke_reduced, weights = weights), # model 9 cardiacrfcat
+#'  glm(formula = dmhba1c2 ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp, family = "binomial",
+#'  data = stroke_reduced, weights = weights), # model 10 dmhba1c2
+#'  glm(formula = case ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp + cardiacrfcat + dmhba1c2, family = "binomial", data = stroke_reduced,
+#'  weights = weights) # model 11 case
+#'  )
+#'
+#'  sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+#'                                   model_list_var = model_list,
+#'                                   weights = stroke_reduced$weights,
+#'                                   in_outDAG = in_out,
+#'                                   response = "case",
+#'                                   NumOrderRiskFactors = 3 )
+#'
+#' sequentialPAF$SAF_summary
+#'
+#' \dontrun{
+#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
+#' # This can take time to run.
+#' sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+#'                                   model_list_var = model_list,
+#'                                   weights = stroke_reduced$weights,
+#'                                   in_outDAG = in_out,
+#'                                   response = "case",
+#'                                   NumOrderRiskFactors = 1000 )
 #' }
 
 sequential_PAF <- function(dataframe, model_list_var, weights = 1, in_outDAG, response, NumOrderRiskFactors,  addCustom = FALSE, custom =""   ){
