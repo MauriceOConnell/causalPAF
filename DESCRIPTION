@@ -38,9 +38,11 @@ Imports:
     splines,
     stats,
     utils
+Suggests: 
+    testthat (>= 3.0.0),
+    spelling
 Encoding: UTF-8
+Language: en-US
 LazyData: true
 RoxygenNote: 7.1.2
-Suggests: 
-    spelling
-Language: en-US
+Config/testthat/edition: 3
