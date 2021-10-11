@@ -4,6 +4,7 @@ AdjustmentSets
 ApoA
 ApoB
 Apolipoprotein
+Cran
 DM
 Dagitty
 Efron
@@ -15,6 +16,7 @@ IsMarkovDAG
 PAF
 PAFs
 Pre
+Roxygen
 Sjolander
 SplinesRemoved
 Tertile
@@ -27,6 +29,7 @@ adjustmentSet
 adjustmentSets
 alcoh
 analysed
+apb
 apoa
 apob
 behaviour
@@ -36,6 +39,7 @@ confounders
 customised
 df
 doi
+dontrun
 eage
 eg
 esex
