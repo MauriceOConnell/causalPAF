@@ -9,12 +9,25 @@
 
 * This is a new release.
 
-I performed the checks on two platforms: Mac OS X and Windows.
-The R package was developed and checked on Mac OS X. 
-Then the causalPAF package was checked on windows using devtools::check_win_release().
+This is a resubmission. I had two notes on the first submission which were coming from the
+package examples in the functions pointEstimate(), causalPAFplot() and sequential_PAF().
+Although I was aware of these two notes, I submitted them as I felt there were notes that
+needed to be included in the submission to CRAN. 
 
-The note is because this line of code below, from the package examples is 106 characters long and is truncated in the documentation rather than 100 characters long, but it needs to be written on one line as 106 characters for the package functions to work. This is because writing it in two lines in the examples, within the inverted commas, creates a space within the inverted commas, which is not recognised by the checkMarkovDag() function. I have added a comment in the example, which gives details of the code that is truncated, so a user can see what was truncated. I believe this note is ok.
+However, the CRAN submission required I fix these two notes, so I rectified the two notes as follows:
 
-Rd file 'pointEstimate.Rd':
-    \examples lines wider than 100 characters:
-       "ns(apob_apoa,knots=quantile(apob_apoa,c(.25,.5,.75)),Boundary.knots=quantile(apob_apoa,c(.001,.95)))",
+1. The causalPAF package functions require simulations and bootstraps which take time to run. I had included
+these R examples, in the first CRAN submission, with a small number of simulations and bootstraps to reduce run time,
+since I thought it would be better to have running examples over 5 seconds rather than running examples not run. But this was still taking over 5 seconds. So now the R examples are present but enclosed with a \dontrun{} so it does not
+create the error that the CRAN submission informed me to remove.
+
+2. The second note requested, that in the R examples, I ensure the spline defined in the line below was 100
+characters or less. Again, I was aware of this note when I submitted the causalPAF package but I had thought
+it was better submitted with a comment showing the characters truncated. This line can be split into multipe lines int the R code, but when using Roxygen, in the R examples, Roxygen adds in a new line symbol when passing to the functions, " \n ", which should not be inserted. This is an issue with Roxygen.
+
+"ns(apob_apoa,knots=quantile(apob_apoa,c(.25,.5,.75)),Boundary.knots=quantile(apob_apoa,c(.001,.95)))",
+
+However, the CRAN submission informed me to rectify this. So I rectified it as follows.
+I changed the variable name in the R examples, "apob_apoa" to "apb" which reduced each occurence of the line
+to 88 characters as follows, which avoids truncation in the documents.
+"ns(apb,knots=quantile(apb,c(.25,.5,.75)),Boundary.knots=quantile(apb,c(.001,.95)))",
