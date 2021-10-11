@@ -24,8 +24,13 @@
 #' @import splines MASS stats forestplot utils grid magrittr checkmate ggplot2
 #' @return Prints a forest plot or a bar chart with error bars of the 5 results for each mediator. The 5 results are:(1)Total Population Attributable Fraction (PAF),(2)Direct Effect Population Attributable Fraction (PAF) using alternative definition, (3)Indirect Effect Population Attributable Fraction (PAF) using alternative definition, (4)Path Specific Population Attributable Fraction (PAF), (5)Overall Direct Population Attributable Fraction (PAF)
 #' @examples
+#' \dontrun{
 #' # Loads some data (fictional Stroke data from the package causalPAF)
 #' stroke_reduced <- strokedata
+#'
+#' # Just shortening the name of a variable, "apob_apoa", to "apb" so the R code
+#' # in document example is not truncated.
+#' stroke_reduced$apb  <- stroke_reduced$apob_apoa
 #'
 #' # The data should contain a column of weights for case control matching.
 #' # strokedata$weights
@@ -75,21 +80,17 @@
 #' # (including spaces) throughout as causalPAF can fit models automatically provided variables are
 #' # spelt consistently. Also if a parent variable is a spline it should be defined in spline
 #' # format in all occurences of the parent variable.
-#' # Note the code for the apob_apoa spline below is truncated in the document (on 3 occasions) but
-#' # the full line should read as follows:
-#' # "ns(apob_apoa,knots=quantile(apob_apoa,c(.25,.5,.75)),
-#' # Boundary.knots=quantile(apob_apoa,c(.001,.95)))",
 #' in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
 #'                      "global_stress2",
-#'"ns(apob_apoa,knots=quantile(apob_apoa,c(.25,.5,.75)),Boundary.knots=quantile(apob_apoa,c(.001,.95)))",
+#'"ns(apb,knots=quantile(apb,c(.25,.5,.75)),Boundary.knots=quantile(apb,c(.001,.95)))",
 #' "ns(whr,df=5)","subhtn")
 #' in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
 #'                  "global_stress2",
-#'"ns(apob_apoa,knots=quantile(apob_apoa,c(.25,.5,.75)),Boundary.knots=quantile(apob_apoa,c(.001,.95)))",
+#'"ns(apb,knots=quantile(apb,c(.25,.5,.75)),Boundary.knots=quantile(apb,c(.001,.95)))",
 #' "ns(whr,df=5)","subhtn")
 #' in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
 #'              "global_stress2",
-#'"ns(apob_apoa,knots=quantile(apob_apoa,c(.25,.5,.75)),Boundary.knots=quantile(apob_apoa,c(.001,.95)))",
+#'"ns(apb,knots=quantile(apb,c(.25,.5,.75)),Boundary.knots=quantile(apb,c(.001,.95)))",
 #' "ns(whr,df=5)","subhtn","cardiacrfcat","dmhba1c2")
 #'
 #' # Then we define a two dimensional list consisting of
@@ -103,7 +104,7 @@
 #' in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,
 #'                in_subhtn,in_apob_apoa,in_whr,in_cardiacrfcat,in_dmhba1c2,in_case),
 #'                outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn",
-#'                          "apob_apoa","whr","cardiacrfcat","dmhba1c2","case"))
+#'                          "apb","whr","cardiacrfcat","dmhba1c2","case"))
 #'
 #' # If splines are to be used for variables listed in in_out$outlist, then the splines should be
 #' # defined in the same order as variables appear in in_out$outlist as follows. It is necessary to
@@ -113,7 +114,7 @@
 #' # And Splines_outlist should not be an empty list(). If there are no splines it should be
 #' # defined the same as in_out[[2]] and in the same order as variables defined in_out[[2]].
 #' Splines_outlist = list( c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn",
-#'"ns(apob_apoa,knots=quantile(apob_apoa,c(.25,.5,.75)),Boundary.knots=quantile(apob_apoa,c(.001,.95)))",
+#'"ns(apb,knots=quantile(apb,c(.25,.5,.75)),Boundary.knots=quantile(apb,c(.001,.95)))",
 #' "ns(whr,df=5)","cardiacrfcat","dmhba1c2","case") )
 #'
 #' # To fit these models to case control data, one needs to perform weighted maximum-likelihood
@@ -146,6 +147,7 @@
 #' # causality, in which case it should not be assumed to embody the causal Markov condition.
 #'
 #' # in_out is as defined above and input into this code.
+#'
 #' if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
 #'   print("Your in_out DAG is a Markov DAG.")
 #'   } else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
@@ -156,6 +158,7 @@
 #'                in_out list so that all parent variables come before descendants.")
 #'           } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
 #'                         causalPAF package cannot be applied for non-Markov DAGs.")}
+#'
 #' # The pointEstimate() function evaluates Point Estimates for Total PAF, Direct PAF, Indirect PAF
 #' # and Path Specific PAF for a user inputted number of integral simulations. There is no bootstrap
 #' # applied in this fucntion.
@@ -163,9 +166,10 @@
 #' # alternative causalPAFplot() function which calculates bootstrap estimates which can take
 #' # longer to run.
 #'
+#'
 #'          pointEstimate(dataframe = stroke_reduced,
 #'                        exposure="phys",
-#'                        mediator=c("subhtn","apob_apoa","whr"),
+#'                        mediator=c("subhtn","apb","whr"),
 #'                        response="case",
 #'                        response_model_mediators = list(),
 #'                        response_model_exposure = list(),
@@ -177,6 +181,7 @@
 #'                        NumSimulation = 3,
 #'                        addCustom = TRUE,
 #'                        custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)")
+#'
 #'
 #'
 #' # The causalPAFplot() function will perform Pathway-Specific Population Attributable Fraction
@@ -201,9 +206,10 @@
 #'
 #' # Finally we call the causalPAFplot function for the pathway-specific PAF calculations as
 #' # follows:
+#'
 #'          causalPAFplot(dataframe = stroke_reduced,
 #'                        exposure="phys",
-#'                        mediator=c("subhtn","apob_apoa","whr"),
+#'                        mediator=c("subhtn","apb","whr"),
 #'                        response="case",
 #'                        response_model_mediators = list(),
 #'                        response_model_exposure = list(),
@@ -220,12 +226,14 @@
 #'                        addCustom = TRUE,
 #'                        custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)")
 #'
-#' \dontrun{
+#'
+#'
 #' # For greater accuracy a larger number of bootstraps (e.g. 200) and larger number of simulations
 #' # (e.g. 1000) should be run. However, this will increase the run time greatly.
+#' \dontrun{
 #'          causalPAFplot(dataframe = stroke_reduced,
 #'                        exposure="phys",
-#'                        mediator=c("subhtn","apob_apoa","whr"),
+#'                        mediator=c("subhtn","apb","whr"),
 #'                        response="case",
 #'                        response_model_mediators = list(),
 #'                        response_model_exposure = list(),
@@ -241,8 +249,9 @@
 #'                        colour="orange",
 #'                        addCustom = TRUE,
 #'                        custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)")
+#'         }
 #'
-#' }
+#'
 #'
 #' # The causalPAFplot function below has response_model_mediators, response_model_exposure and
 #' # model_listArg pre-fit. This allows the user to apply customised regressions instead of the
@@ -250,43 +259,49 @@
 #' # based on the causalDAG defined in in_outArg.
 #'
 #' # Libraries must be loaded if fitting models outside of the causalPAF R package.
+#'
 #' library(MASS)
 #' library(splines)
+#'
 #'
 #' # Next we fit the, response_model_mediators and response_model_exposure, models outside of the
 #' # causalPAF package as an input into the package.
 #'
 #' # It is important that response_vs_mediator is a list and it must be the same length as the
 #' # parameter, mediator, i.e. length( response_vs_mediator ) == length( mediator). In this
-#' # example, mediator=c("subhtn","apob_apoa","whr") so length( mediator) is 3, so we create a list
-#' # with three models for "subhtn","apob_apoa" and "whr" respectively in that order. Note in this
+#' # example, mediator=c("subhtn","apb","whr") so length( mediator) is 3, so we create a list
+#' # with three models for "subhtn","apb" and "whr" respectively in that order. Note in this
 #' # example, the model is the same for each mediator, but it must still be input 3 times within
 #' # the list as follows:
+#'
 #' response_vs_mediator <-  list(
 #' glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +subeduc+moteduc+ fatduc+ phys+
 #' ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn +
-#' ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)),
-#' Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+
+#' ns(apb, knots = quantile(apb,c(.25,0.5,0.75)),
+#' Boundary.knots = quantile(apb,c(.001,0.95)))+
 #' ns(whr,df=5)",data = stroke_reduced,family='binomial',w = stroke_reduced$weights ),
 #' # "subhtn" mediator model
 #' glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+
 #' ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn +
-#' ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)),
-#' Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+
+#' ns(apb, knots = quantile(apb,c(.25,0.5,0.75)),
+#' Boundary.knots = quantile(apb,c(.001,0.95)))+
 #' ns(whr,df=5)",data = stroke_reduced,family='binomial',w = stroke_reduced$weights ),
-#' # "apob_apoa" mediator model
+#' # "apob_apoa" mediator model name shoretd to "apb"
 #' glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+
 #' ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn +
-#' ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)),
-#' Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+
+#' ns(apb, knots = quantile(apb,c(.25,0.5,0.75)),
+#' Boundary.knots = quantile(apb,c(.001,0.95)))+
 #' ns(whr,df=5)",data = stroke_reduced,family='binomial',w = stroke_reduced$weights ) )
 #'  # "whr" mediator model
 #'
+#'
 #' # Next we fit a customised response_model_exposure model rather than allowing the package fit it
 #' # automatically as shown previously. This must be a list of length 1.
+#'
 #' response_vs_phys <- list(glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)+subeduc+moteduc+
 #' fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2",data = stroke_reduced,
 #' family='binomial',w= stroke_reduced$weights) )
+#'
 #'
 #' # model_listArg is a list of models fitted for each of the variables in in_out$outlist based on
 #' # its parents given in in_out$inlist. By default this is set to an empty list. Alternatively the
@@ -294,6 +309,7 @@
 #' # structure. model_listArg is defined earlier in this tutorial.
 #' # Note it is important that model_listArg is defined as a list and in the same order and length
 #' # as the variables defined in in_outArg[[2]].
+#'
 #'
 #' model_listArgFit <- list(glm(formula = phys ~ subeduc + regionnn7 * ns(eage, df = 5) +
 #' esex * ns(eage, df = 5) + moteduc + fatduc, family = "binomial", data = stroke_reduced,
@@ -311,34 +327,35 @@
 #' glm(formula = subhtn ~ subeduc + regionnn7 * ns(eage, df = 5) +esex * ns(eage, df = 5) +
 #' moteduc + fatduc + phys + ahei3tert +nevfcur + alcohfreqwk + global_stress2,family = "binomial",
 #' data = stroke_reduced, weights = weights), # model 6 subhtn
-#' lm(formula = apob_apoa ~ subeduc + regionnn7 * ns(eage, df = 5) +esex * ns(eage, df = 5) +
+#' lm(formula = apb ~ subeduc + regionnn7 * ns(eage, df = 5) +esex * ns(eage, df = 5) +
 #' moteduc + fatduc + phys + ahei3tert +nevfcur + alcohfreqwk + global_stress2,
-#' data = stroke_reduced,weights = weights), # model 7 apob_apoa
+#' data = stroke_reduced,weights = weights), # model 7 apob_apoa name shorted to "apb"
 #' lm(formula = whr ~ subeduc + regionnn7 * ns(eage, df = 5) + esex *ns(eage, df = 5) + moteduc +
 #' fatduc + phys + ahei3tert +nevfcur + alcohfreqwk + global_stress2, data = stroke_reduced,
 #' weights = weights), # model 8 whr
 #' glm(formula = cardiacrfcat ~ subeduc + regionnn7 * ns(eage, df = 5) +esex * ns(eage, df = 5) +
 #' moteduc + fatduc + phys + ahei3tert +nevfcur + alcohfreqwk + global_stress2 +
-#' ns(apob_apoa, knots = quantile(apob_apoa,c(0.25, 0.5, 0.75)),
-#' Boundary.knots = quantile(apob_apoa,c(0.001, 0.95))) + ns(whr, df = 5) + subhtn,
+#' ns(apb, knots = quantile(apb,c(0.25, 0.5, 0.75)),
+#' Boundary.knots = quantile(apb,c(0.001, 0.95))) + ns(whr, df = 5) + subhtn,
 #' family = "binomial",data = stroke_reduced, weights = weights), # model 9 cardiacrfcat
 #' glm(formula = dmhba1c2 ~ subeduc + regionnn7 * ns(eage, df = 5) +esex * ns(eage, df = 5) +
 #' moteduc + fatduc + phys + ahei3tert +nevfcur + alcohfreqwk + global_stress2 +
-#' ns(apob_apoa, knots = quantile(apob_apoa,c(0.25, 0.5, 0.75)),
-#' Boundary.knots = quantile(apob_apoa,c(0.001, 0.95))) + ns(whr, df = 5) + subhtn,
+#' ns(apb, knots = quantile(apb,c(0.25, 0.5, 0.75)),
+#' Boundary.knots = quantile(apb,c(0.001, 0.95))) + ns(whr, df = 5) + subhtn,
 #' family = "binomial",data = stroke_reduced, weights = weights), # model 10 dmhba1c2
 #' glm(formula = case ~ subeduc + regionnn7 * ns(eage, df = 5) +esex * ns(eage, df = 5) + moteduc +
 #' fatduc + phys + ahei3tert +nevfcur + alcohfreqwk + global_stress2 +
-#' ns(apob_apoa, knots = quantile(apob_apoa,c(0.25, 0.5, 0.75)),
-#' Boundary.knots = quantile(apob_apoa,c(0.001, 0.95))) + ns(whr, df = 5) + subhtn +
+#' ns(apb, knots = quantile(apb,c(0.25, 0.5, 0.75)),
+#' Boundary.knots = quantile(apb,c(0.001, 0.95))) + ns(whr, df = 5) + subhtn +
 #' cardiacrfcat +dmhba1c2, family = "binomial", data = stroke_reduced, weights = weights)
 #' # model 11 case
 #' )
 #'
 #'
+#'
 #'         causalPAFplot(dataframe = stroke_reduced,
 #'                       exposure="phys",
-#'                       mediator=c("subhtn","apob_apoa","whr"),
+#'                       mediator=c("subhtn","apb","whr"),
 #'                       response="case",
 #'                       response_model_mediators = response_vs_mediator,
 #'                       response_model_exposure = response_vs_phys,
@@ -352,12 +369,15 @@
 #'                       plot = "bar",
 #'                       fill= "skyblue",
 #'                       colour ="orange" )
-#' \dontrun{
+#'
+#'
+#'
+#'    \dontrun{
 #' # For greater accuracy a larger number of bootstraps (e.g. 200) and larger number of simulations
 #' # (e.g. 1000) should be run. However, this will increase the run time greatly.
 #' causalPAFplot(dataframe = stroke_reduced,
 #'               exposure="phys",
-#'               mediator=c("subhtn","apob_apoa","whr"),
+#'               mediator=c("subhtn","apb","whr"),
 #'               response="case",
 #'               response_model_mediators = response_vs_mediator,
 #'               response_model_exposure = response_vs_phys,
@@ -372,6 +392,7 @@
 #'               fill= "skyblue",
 #'               colour ="orange" )
 #'
+#'    }
 #' }
 
 

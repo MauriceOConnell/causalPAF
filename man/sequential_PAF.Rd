@@ -58,6 +58,7 @@ included within the interaction terms. See tutorial for examples.}
 Patients are listed in rows with variables (i.e. exposure, risk factors, confounders, outcome) listed in columns.
 }
 \examples{
+\dontrun{
 stroke_reduced <- strokedata
 
 in_phys <- c("subeduc","moteduc","fatduc")
@@ -86,6 +87,7 @@ in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_s
                          "dmhba1c2","case"))
 
 
+
 if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
   print("Your in_out DAG is a Markov DAG.")
 } else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
@@ -97,11 +99,13 @@ if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
 } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
                causalPAF package cannot be applied for non-Markov DAGs.")}
 
+
 w <- rep(1,nrow(stroke_reduced))
 w[stroke_reduced$case==0] <- 0.9965
 w[stroke_reduced$case==1] <- 0.0035
 
 stroke_reduced$weights <- w
+
 
 sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
                                  model_list_var = list(),
@@ -112,7 +116,10 @@ sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
                                  addCustom = TRUE,
                                  custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
 
+
 sequentialPAF$SAF_summary
+
+
 
 \dontrun{
 # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
@@ -131,8 +138,10 @@ sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
 #######################################################################################
 # Alternatively, the user can supply a customised model_list_var parameter as follows:
 # Libraries must be loaded if fitting models outside of the causalPAF R package.
+
 library(MASS)
 library(splines)
+
 
 # model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based
 # on its parents given in in_outDAG$inlist. By default this is set to an empty list.
@@ -140,6 +149,7 @@ library(splines)
 # consistent with the causal structure.
 # Note it is important that model_listArg is defined as a list and in the same order and length
 # as the variables defined in in_outDAG[[2]].
+
 
 model_list <- list(
  glm(formula = phys ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + moteduc
@@ -176,6 +186,8 @@ model_list <- list(
  weights = weights) # model 11 case
  )
 
+
+
  sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
                                   model_list_var = model_list,
                                   weights = stroke_reduced$weights,
@@ -185,7 +197,8 @@ model_list <- list(
 
 sequentialPAF$SAF_summary
 
-\dontrun{
+
+   \dontrun{
 # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
 # This can take time to run.
 sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
@@ -194,5 +207,6 @@ sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
                                   in_outDAG = in_out,
                                   response = "case",
                                   NumOrderRiskFactors = 1000 )
+          }
 }
 }
