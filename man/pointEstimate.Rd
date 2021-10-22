@@ -30,9 +30,9 @@ pointEstimate(
 
 \item{response}{The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.}
 
-\item{response_model_mediators}{A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.This model can be listed either as (1) an empty list ( response_model_mediators = list() ) or (2) the user can specify their own customised causal regression model(s) to use. When it is listed as an empty list the causalPAF package will fit the response_model_mediators regression model automatically based on the causal DAG supplied by the user in in_outArg. Alternatively, the user can specify the exact model(s) that the user wishes to use, these model(s) must be in list format (list() where length(response_model_mediators) == length(mediator) ), the same length as the parameter, mediator, with the user customised model for each mediator listed in the same order as in the parameter, mediator, and if there is only one model, it must be listed each time within the list() so that length(response_model_mediators) == length(mediator).}
+\item{response_model_mediators}{A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.This model can be listed either as (1) an empty list ( response_model_mediators = list() ) or (2) the user can specify their own customised causal regression model(s) to use. When it is listed as an empty list the 'causalPAF' package will fit the response_model_mediators regression model automatically based on the causal DAG supplied by the user in in_outArg. Alternatively, the user can specify the exact model(s) that the user wishes to use, these model(s) must be in list format (list() where length(response_model_mediators) == length(mediator) ), the same length as the parameter, mediator, with the user customised model for each mediator listed in the same order as in the parameter, mediator, and if there is only one model, it must be listed each time within the list() so that length(response_model_mediators) == length(mediator).}
 
-\item{response_model_exposure}{A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure in the causal Bayesian network. This regression model will not adjust for mediators (exclude mediators) of the exposure in the regression model so that the total effect of the exposure on the response can be modelled. This model can be listed either as (1) an empty list ( response_model_exposure = list() ) or (2) the user can specify their own customised causal regression model to use. If specified as an empty list, list(), then the causalPAF function will define and fit the model automatically based on the causal DAG defined by the in_outArg parameter. Alternatively, the user can specify the exact model that the user wishes to use, this model must be in list format (list() where length(response_model_exposure) == 1 ), of length 1, assuming only one exposure of interest (other exposures can be risk factors) and the model must be defined within a list() since the package assumes a list() format is supplied. See example in tutorial. E.G. If physical exercise ("exer") in the example given in the diagram is the exposure. Then the regression would include all parents of "exer" (i.e. sex, region, educ, age) as well as risk factors at the same level of the causal Bayesian network (i.e. stress, smoke, diet, alcoh).}
+\item{response_model_exposure}{A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure in the causal Bayesian network. This regression model will not adjust for mediators (exclude mediators) of the exposure in the regression model so that the total effect of the exposure on the response can be modelled. This model can be listed either as (1) an empty list ( response_model_exposure = list() ) or (2) the user can specify their own customised causal regression model to use. If specified as an empty list, list(), then the 'causalPAF' package will define and fit the model automatically based on the causal DAG defined by the in_outArg parameter. Alternatively, the user can specify the exact model that the user wishes to use, this model must be in list format (list() where length(response_model_exposure) == 1 ), of length 1, assuming only one exposure of interest (other exposures can be risk factors) and the model must be defined within a list() since the package assumes a list() format is supplied. See example in tutorial. E.G. If physical exercise ("exer") in the example given in the diagram is the exposure. Then the regression would include all parents of "exer" (i.e. sex, region, educ, age) as well as risk factors at the same level of the causal Bayesian network (i.e. stress, smoke, diet, alcoh).}
 
 \item{in_outArg}{This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.}
 
@@ -40,7 +40,7 @@ pointEstimate(
 
 \item{splinesDefinedIn_in_outDAG}{Logical TRUE or FALSE indicating whether the user has defined splines in the causal DAG, in_out, if TRUE. If FALSE and splines are defined in Splines_outlist_Var, then it is necessary for the package to populate the in_out DAG with splines listed in Splines_outlist_Var.}
 
-\item{model_listArg}{is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\$outlist ) based on its parents given in in_outArg[[1]] ( or in_out\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the causalPAF package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response variable. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.}
+\item{model_listArg}{is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\$outlist ) based on its parents given in in_outArg[[1]] ( or in_out\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the 'causalPAF' package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response variable. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.}
 
 \item{weights}{Column of weights for case control matching listed in the same order as the patients in the data e.g. weights = strokedata$weights.}
 
@@ -57,9 +57,15 @@ Estimates point estimates for 5 results that are:(1)Total Population Attributabl
 Evaluates Total PAF, Direct PAF, Indirect PAF and Path Specific PAF for a user inputted number of bootstraps and integral simulations
 }
 \examples{
-\dontrun{
-# Loads some data (fictional Stroke data from the package causalPAF)
-stroke_reduced <- strokedata
+\donttest{
+# Loads some data (fictional Stroke data from the package 'causalPAF')
+# In this example, we use a small data set called 'strokedata_smallSample' consisting of 5,000
+# rows of fictional patient data. For more accurate results, a larger data set is available
+# called 'strokedata'which contains 16,623 rows of fictional patient data. The methodology
+# applied in the 'causalPAF' package is more accurate the larger the dataset. To use the larger
+# 'strokedata' dataset, simply call
+# stroke_reduced <- strokedata
+stroke_reduced <- strokedata_smallSample
 
 # Just shortening the name of a variable, "apob_apoa", to "apb" so the R code
 # in document example is not truncated.
@@ -70,7 +76,7 @@ stroke_reduced$apb  <- stroke_reduced$apob_apoa
 # Weigths are not needed for cohort/cross sectional designs.
 
 # The data should have reference levels of all risk factors already set.
-# This can be done as follows:
+# This can be done as follows  but has already been applied to the data so is not run here:
 # levels(stroke_reduced$htnadmbp) <- c(0, 1)
 # stroke_reduced$subhtn <-  factor(stroke_reduced$subhtn,levels=c(1, 2))
 # levels(stroke_reduced$nevfcur) <- c(1, 2)
@@ -83,7 +89,7 @@ stroke_reduced$apb  <- stroke_reduced$apob_apoa
 # levels(stroke_reduced$ahei3tert) <- c(3,2,1)
 # levels(stroke_reduced$apob_apoatert) <- c(1,2,3)
 
-# The causalPAF package assumes the data is either complete case data or that missing data
+# The 'causalPAF' package assumes the data is either complete case data or that missing data
 # analysis has already been performed.
 
 # Next, define the causal structure or directed acyclic graph (DAG) of the causal Bayesian
@@ -110,7 +116,7 @@ in_whr <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreq
 # Note splines can be fitted within the causal structure as shown below especially if splines
 # are to be used in the fitted models.
 # It is important that splines of parent variables are "typed" or "spelt" consistently
-# (including spaces) throughout as causalPAF can fit models automatically provided variables are
+# (including spaces) throughout as 'causalPAF' can fit models automatically provided variables are
 # spelt consistently. Also if a parent variable is a spline it should be defined in spline
 # format in all occurences of the parent variable.
 in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
@@ -165,7 +171,7 @@ w[stroke_reduced$case==1] <- 0.0035
 #  fictional data will be used. In this case, we want to use weigths as defined in w.
 stroke_reduced$weights <- w
 
-#The checkMarkovDAG() function in the causalPAF package should be used before running
+#The checkMarkovDAG() function in the 'causalPAF' package should be used before running
 # causalPAFplot() to ensure:
 #1. The causal Markov condition holds for the causal structure defined in the variable in_out.
 #2. The variables in in_out are listed in the order so that no variable is defined before a
@@ -190,7 +196,7 @@ if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
           print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
                in_out list so that all parent variables come before descendants.")
           } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
-                        causalPAF package cannot be applied for non-Markov DAGs.")}
+                        'causalPAF' package cannot be applied for non-Markov DAGs.")}
 
 
 # The pointEstimate() function evaluates Point Estimates for Total PAF, Direct PAF, Indirect PAF
@@ -219,17 +225,17 @@ if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
 
 # The pointEstimate() function below has response_model_mediators, response_model_exposure and
 # model_listArg pre-fit. This allows the user to apply customised regressions instead of the
-# default setting above, where the causalPAF R package fitted these regressions automatically
+# default setting above, where the 'causalPAF' R package fitted these regressions automatically
 # based on the causalDAG defined in in_outArg.
 
-# Libraries must be loaded if fitting models outside of the causalPAF R package.
+# Libraries must be loaded if fitting models outside of the 'causalPAF' R package.
 
 library(MASS)
 library(splines)
 
 
 # Next we fit the, response_model_mediators and response_model_exposure, models outside of the
-# causalPAF package as an input into the package.
+# 'causalPAF' package as an input into the package.
 
 # It is important that response_vs_mediator is a list and it must be the same length as the
 # parameter, mediator, i.e. length( response_vs_mediator ) == length( mediator). In this

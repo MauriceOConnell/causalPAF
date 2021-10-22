@@ -7,7 +7,14 @@
 #' \item{in_out}{The in_out list supplied in the function is returns the same of the input if IsMarkovDAG is returned TRUE. If IsMarkovDAG is returned FALSE the order of the in_out list is updated such that all parent variables come before ancestors in both i_out[[1]] and in_out[[2]]. This corrects any error where variables from a given Markov Bayesian DAG are input to the package in the incorrect order.}
 #' \item{Reordered}{Reordered is FALSE if in_out is left in the same order as input. Reordered is FALSE if in_out has been reordered so that parents of variables could before descendants.}
 #' @examples
-#' stroke_reduced <- strokedata
+#' # Loads some data (fictional Stroke data from the package 'causalPAF')
+#' # In this example, we use a small data set called 'strokedata_smallSample' consisting of 5,000
+#' # rows of fictional patient data. For more accurate results, a larger data set is available
+#' # called 'strokedata'which contains 16,623 rows of fictional patient data. The methodology
+#' # applied in the 'causalPAF' package is more accurate the larger the dataset. To use the larger
+#' # 'strokedata' dataset, simply call
+#' # stroke_reduced <- strokedata
+#' stroke_reduced <- strokedata_smallSample
 #'
 #' in_phys <- c("subeduc","moteduc","fatduc")
 #' in_ahei <- c("subeduc","moteduc","fatduc")
@@ -44,7 +51,7 @@
 #'   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
 #'           in_out list so that all parent variables come before descendants.")
 #' } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
-#'                causalPAF package cannot be applied for non-Markov DAGs.")}
+#'                'causalPAF' package cannot be applied for non-Markov DAGs.")}
 
 checkMarkovDAG <- function(in_out){
 

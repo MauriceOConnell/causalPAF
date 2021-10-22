@@ -26,11 +26,11 @@
 #'              {SC , SB , SP , SD , Y }, and summarized by the causal graphs in
 #'              (O’Connell and Ferguson 2020) <https://doi.org/10.1101/2020.10.15.20212845> and
 #'              (Ferguson, O’Connell, and O’Donnell 2020) https://doi.org/10.1186/s13690-020-00442-x .
-#' @name strokedata
+#' @name strokedata_smallSample
 #' @docType data
 #' @usage strokedata
 #' @keywords datasets
-#' @format A data frame with 16623 rows and 21 variables in columns. Each row representing either a fictional individual stroke case or control:
+#' @format A data frame with 5000 rows and 21 variables in columns. Each row representing either a fictional individual stroke case or control:
 #' \describe{
 #'   \item{regionnn7}{ Region (number, 7 categories)}
 #'   \item{case}{Case status (number, 1=cases, 0=controls)}

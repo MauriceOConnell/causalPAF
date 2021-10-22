@@ -18,7 +18,14 @@ checkMarkovDAG(in_out)
 The functions checks if the Markov condition holds for the Directed Acyclic Graph (DAG) defined. Sometimes called the Markov assumption, is an assumption made in Bayesian probability theory, that every node in a Bayesian network is conditionally independent of its nondescendants, given its parents. In other words, it is assumed that a node has no bearing on nodes which do not descend from it. This is equivalent to stating that a node is conditionally independent of the entire network, given its Markov blanket. The related Causal Markov condition states that, conditional on the set of all its direct causes, a node is independent of all variables which are not direct causes or direct effects of that node.
 }
 \examples{
-stroke_reduced <- strokedata
+# Loads some data (fictional Stroke data from the package 'causalPAF')
+# In this example, we use a small data set called 'strokedata_smallSample' consisting of 5,000
+# rows of fictional patient data. For more accurate results, a larger data set is available
+# called 'strokedata'which contains 16,623 rows of fictional patient data. The methodology
+# applied in the 'causalPAF' package is more accurate the larger the dataset. To use the larger
+# 'strokedata' dataset, simply call
+# stroke_reduced <- strokedata
+stroke_reduced <- strokedata_smallSample
 
 in_phys <- c("subeduc","moteduc","fatduc")
 in_ahei <- c("subeduc","moteduc","fatduc")
@@ -55,5 +62,5 @@ if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
           in_out list so that all parent variables come before descendants.")
 } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
-               causalPAF package cannot be applied for non-Markov DAGs.")}
+               'causalPAF' package cannot be applied for non-Markov DAGs.")}
 }

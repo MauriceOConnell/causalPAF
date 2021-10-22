@@ -31,8 +31,15 @@
 #' \item{SAF_summary }{Returns the data used for the plot containing both the Bayesian network (labelled Bayesian network) with indirect effects modelled and a model
 #'      (labelled usual) with no indirect effects modelled.}
 #' @examples
-#' \dontrun{
-#' stroke_reduced <- strokedata
+#' \donttest{
+#' # Loads some data (fictional Stroke data from the package 'causalPAF')
+#' # In this example, we use a small data set called 'strokedata_smallSample' consisting of 5,000
+#' # rows of fictional patient data. For more accurate results, a larger data set is available
+#' # called 'strokedata'which contains 16,623 rows of fictional patient data. The methodology
+#' # applied in the 'causalPAF' package is more accurate the larger the dataset. To use the larger
+#' # 'strokedata' dataset, simply call
+#' # stroke_reduced <- strokedata
+#' stroke_reduced <- strokedata_smallSample
 #'
 #' in_phys <- c("subeduc","moteduc","fatduc")
 #' in_ahei <- c("subeduc","moteduc","fatduc")
@@ -70,7 +77,7 @@
 #'   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
 #'           in_out list so that all parent variables come before descendants.")
 #' } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
-#'                causalPAF package cannot be applied for non-Markov DAGs.")}
+#'                'causalPAF' package cannot be applied for non-Markov DAGs.")}
 #'
 #'
 #' w <- rep(1,nrow(stroke_reduced))
@@ -79,7 +86,8 @@
 #'
 #' stroke_reduced$weights <- w
 #'
-#'
+#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
+#' # This can take time to run.
 #' sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
 #'                                  model_list_var = list(),
 #'                                  weights = w,
@@ -93,24 +101,9 @@
 #' sequentialPAF$SAF_summary
 #'
 #'
-#'
-#' \dontrun{
-#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
-#' # This can take time to run.
-#' sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
-#'                                  model_list_var = list(),
-#'                                  weights = w,
-#'                                  in_outDAG = in_out,
-#'                                  response = "case",
-#'                                  NumOrderRiskFactors = 1000,
-#'                                  addCustom = TRUE,
-#'                                  custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
-#' }
-#'
-#'
 #'#######################################################################################
 #' # Alternatively, the user can supply a customised model_list_var parameter as follows:
-#' # Libraries must be loaded if fitting models outside of the causalPAF R package.
+#' # Libraries must be loaded if fitting models outside of the 'causalPAF' R package.
 #'
 #' library(MASS)
 #' library(splines)
@@ -160,7 +153,8 @@
 #'  )
 #'
 #'
-#'
+#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
+#' # This can take time to run.
 #'  sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
 #'                                   model_list_var = model_list,
 #'                                   weights = stroke_reduced$weights,
@@ -170,17 +164,6 @@
 #'
 #' sequentialPAF$SAF_summary
 #'
-#'
-#'    \dontrun{
-#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
-#' # This can take time to run.
-#' sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
-#'                                   model_list_var = model_list,
-#'                                   weights = stroke_reduced$weights,
-#'                                   in_outDAG = in_out,
-#'                                   response = "case",
-#'                                   NumOrderRiskFactors = 1000 )
-#'           }
 #' }
 
 sequential_PAF <- function(dataframe, model_list_var, weights = 1, in_outDAG, response, NumOrderRiskFactors,  addCustom = FALSE, custom =""   ){
