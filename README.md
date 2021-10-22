@@ -12,10 +12,9 @@ diagram which apply both:
 
 1.  Pathway-specific population attributable fractions (PS-PAFs)
     O’Connell and Ferguson (2020)
-    <doi:https://doi.org/10.1101/2020.10.15.20212845> and
+    <https://doi.org/10.1101/2020.10.15.20212845> and
 2.  Sequential population attributable fractions Ferguson, O’Connell,
-    and O’Donnell (2020)
-    <doi:https://doi.org/10.1186/s13690-020-00442-x>.
+    and O’Donnell (2020) <https://doi.org/10.1186/s13690-020-00442-x>.
 
 Results are presentable in both table and plot format.
 
