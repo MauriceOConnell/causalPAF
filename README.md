@@ -11,10 +11,11 @@ calculations of population attributable fractions (PAF) given a causal
 diagram which apply both:
 
 1.  Pathway-specific population attributable fractions (PS-PAFs)
-    (O’Connell and Ferguson 2020)
-    <https://doi.org/10.1101/2020.10.15.20212845> and
-2.  Sequential population attributable fractions (Ferguson, O’Connell,
-    and O’Donnell 2020) <https://doi.org/10.1186/s13690-020-00442-x>.
+    O’Connell and Ferguson (2020)
+    <doi:https://doi.org/10.1101/2020.10.15.20212845> and
+2.  Sequential population attributable fractions Ferguson, O’Connell,
+    and O’Donnell (2020)
+    <doi:https://doi.org/10.1186/s13690-020-00442-x>.
 
 Results are presentable in both table and plot format.
 
@@ -317,4 +318,5 @@ in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_s
                                   custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
 
  sequentialPAF$SAF_summary
+          
 ```

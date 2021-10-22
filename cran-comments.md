@@ -9,25 +9,10 @@
 
 * This is a new release.
 
-This is a resubmission. I had two notes on the first submission which were coming from the
-package examples in the functions pointEstimate(), causalPAFplot() and sequential_PAF().
-Although I was aware of these two notes, I submitted them as I felt there were notes that
-needed to be included in the submission to CRAN. 
+This is a resubmission. I received feedback from CRAN and I made changes as follows:
+1. I added references into the Description file.
+2. I created a second dataset for the 'causalPAF' package called 'strokedata_smallSample.rda'. This consists of 5,000 rows of data whereas the other package dataset contains 16,623 rows of data. The Roxygen examples are now run on the smaller dataset, 'strokedata_smallSample', to reduce runtime. Although the examples also refer to the larger dataset should the user want to run this to obtain more accurate results. It was hoped the smaller dataset would reduce the run time to under 5 seconds. Although it has reduced the run time by about 3 minutes for the entire package examples, the run time is still over 5 seconds for most examples. As a result, I have used \dontest{} as advised by CRAN and remove \dontrun{}.
+3. Some code lines in examples are commented out because they were already run in creating the package dataset. The purpose is to inform the user of the formatting of the data for the 'causalPAF' package. Including them again will increase the run time of the examples. But I can uncomment those lines if required.
+4.   'causalPAF' was written in single quotes as advise by CRAN: 'causalPAF'.
 
-However, the CRAN submission required I fix these two notes, so I rectified the two notes as follows:
 
-1. The causalPAF package functions require simulations and bootstraps which take time to run. I had included
-these R examples, in the first CRAN submission, with a small number of simulations and bootstraps to reduce run time,
-since I thought it would be better to have running examples over 5 seconds rather than running examples not run. But this was still taking over 5 seconds. So now the R examples are present but enclosed with a \dontrun{} so it does not
-create the error that the CRAN submission informed me to remove.
-
-2. The second note requested, that in the R examples, I ensure the spline defined in the line below was 100
-characters or less. Again, I was aware of this note when I submitted the causalPAF package but I had thought
-it was better submitted with a comment showing the characters truncated. This line can be split into multipe lines int the R code, but when using Roxygen, in the R examples, Roxygen adds in a new line symbol when passing to the functions, " \n ", which should not be inserted. This is an issue with Roxygen.
-
-"ns(apob_apoa,knots=quantile(apob_apoa,c(.25,.5,.75)),Boundary.knots=quantile(apob_apoa,c(.001,.95)))",
-
-However, the CRAN submission informed me to rectify this. So I rectified it as follows.
-I changed the variable name in the R examples, "apob_apoa" to "apb" which reduced each occurence of the line
-to 88 characters as follows, which avoids truncation in the documents.
-"ns(apb,knots=quantile(apb,c(.25,.5,.75)),Boundary.knots=quantile(apb,c(.001,.95)))",

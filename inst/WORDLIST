@@ -4,6 +4,7 @@ AdjustmentSets
 ApoA
 ApoB
 Apolipoprotein
+CMD
 Cran
 DM
 Dagitty
@@ -16,6 +17,8 @@ IsMarkovDAG
 PAF
 PAFs
 Pre
+README
+Rmd
 Roxygen
 Sjolander
 SplinesRemoved
@@ -39,6 +42,7 @@ confounders
 customised
 df
 doi
+dontest
 dontrun
 eage
 eg
@@ -68,8 +72,10 @@ recognise
 regionnn
 regressionExposure
 regressionMediator
+resave
 reweighting
 skyblue
+smallSample’
 strokedata
 strokedata’
 subhtn
