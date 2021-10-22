@@ -42,6 +42,7 @@ Imports:
     utils
 Suggests: 
     spelling
+Depends: R (>= 2.10)
 Encoding: UTF-8
 Language: en-US
 LazyData: true
