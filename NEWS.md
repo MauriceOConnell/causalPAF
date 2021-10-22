@@ -26,3 +26,4 @@ which was a fault with Roxygen rather than the code). As a result of feedback fr
 * When the new package data , ‘strokedata_smallSample’, was put into the package data, it was necessary to remove an error as follows by adding in R  “--resave-data” into the  Build \ Configure Build Tools… (which is accessed via R studio and pressing Build and then pressing Configure Build Tools ) in both of these lines: 1. Install and Restart – R CMD INSTALL additional options and 2. Build Source Package – R CMD additional options.
 * Updated doi urls in README.Rmd.
 * Updated Description file to 1.2.4 and updated data to 1.2.4
+* After adding in a new package dataset called 'strokedata_smallSample' it was necessary to add Depends: R (>= 2.10) in the description file which seemed to have to do with compressing the file.
