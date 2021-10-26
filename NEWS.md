@@ -27,3 +27,8 @@ which was a fault with Roxygen rather than the code). As a result of feedback fr
 * Updated doi urls in README.Rmd.
 * Updated Description file to 1.2.4 and updated data to 1.2.4
 * After adding in a new package dataset called 'strokedata_smallSample' it was necessary to add Depends: R (>= 2.10) in the description file which seemed to have to do with compressing the file.
+
+# causalPAF 1.2.4.9000
+* Created a branch called 'devel'.
+* Updated the description package number for the 'devel' branch by adding .9000 to show it is the development branch version i.e. 1.2.4.9000
+* Updated NEWS.md for devel 1.2.4.9000 as shown here.
