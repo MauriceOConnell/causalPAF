@@ -3,7 +3,7 @@
     "path": "~/Documents/Rpackages/PAF/causalPAF/README.Rmd",
     "project_path": "README.Rmd",
     "type": "r_markdown",
-    "hash": "2337397786",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1633700203486.0,
@@ -12,8 +12,8 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "22,129",
-        "scrollLine": "0"
+        "cursorPosition": "66,31",
+        "scrollLine": "53"
     },
     "folds": "",
     "lastKnownWriteTime": 1660945082,

@@ -1,4 +1,6 @@
 ^revdep$
-^README.Rmd
-^causalPAF.Rproj
-^cran-comments.md
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^cran-comments\.md$
+^CRAN-RELEASE$

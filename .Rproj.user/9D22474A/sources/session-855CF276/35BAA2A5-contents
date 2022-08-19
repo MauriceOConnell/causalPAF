@@ -1,1 +1,5 @@
 revdep/
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
