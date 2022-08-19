@@ -3,27 +3,25 @@ Package: causalPAF
 Title: Causal Effect for Population Attributable Fractions (PAF)
 Version: 1.2.5
 Date: 2022-08-18
-Authors@R: 
-    c(person(given = "Maurice",
-             family = "O'Connell",
-             role = c("aut", "cph", "cre"),
-             email = "maurice.oconnell2@gmail.com",
-             comment = c(ORCID = "0000-0001-9658-495X")),
-      person(given = "John",
-             family = "Ferguson",
-             role = c("aut", "cph")))
+Authors@R: c(
+    person("Maurice", "O'Connell", , "maurice.oconnell2@gmail.com", role = c("aut", "cph", "cre"),
+           comment = c(ORCID = "0000-0001-9658-495X")),
+    person("John", "Ferguson", role = c("aut", "cph"))
+  )
 Description: Calculates population attributable fraction causal effects.
     The 'causalPAF' package contains a suite of functions for causal
     analysis calculations of population attributable fractions (PAF) given
     a causal diagram which apply both: Pathway-specific population
-    attributable fractions (PS-PAFs) O’Connell and Ferguson (2022) 
-    <doi:10.1093/ije/dyac079> and Sequential population
-    attributable fractions Ferguson, O’Connell, and O’Donnell (2020) 
-    <doi:10.1186/s13690-020-00442-x>. 
-    Results are presentable in both table and plot format.
+    attributable fractions (PS-PAFs) O’Connell and Ferguson (2022)
+    <doi:10.1093/ije/dyac079> and Sequential population attributable
+    fractions Ferguson, O’Connell, and O’Donnell (2020)
+    <doi:10.1186/s13690-020-00442-x>.  Results are presentable in both
+    table and plot format.
 License: GPL (>=2)
 URL: https://github.com/MauriceOConnell/causalPAF
 BugReports: https://github.com/MauriceOConnell/causalPAF/issues
+Depends: 
+    R (>= 2.10)
 Imports: 
     checkmate,
     dagitty,
@@ -42,9 +40,8 @@ Imports:
     utils
 Suggests: 
     spelling
-Depends: R (>= 2.10)
+Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 RoxygenNote: 7.2.1
-Config/testthat/edition: 3
