@@ -20,7 +20,7 @@ path_specific_onesimulation(
 
 \item{exposure}{The exposure name in the form of character string e.g. "phys" for physical exercise.}
 
-\item{mediator}{The mediator name in the form of character string e.g. "whr" for waist-hip ratio.}
+\item{mediator}{The mediator name in the form of character string e.g. "whr" for waist hip ratio.}
 
 \item{response}{The outcome name in the form of character string e.g. "case" for a stroke case.}
 
@@ -31,13 +31,17 @@ path_specific_onesimulation(
 
 \item{response_model_2}{A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure in the causal Bayesian network. This regression model will not adjust for mediators (exclude mediators) of the exposure in the regression model so that the total effect of the exposure on the response can be modelled. This model can be listed either as (1) an empty list ( response_model_exposure = list() ) or (2) the user can specify their own customised causal regression model to use. If specified as an empty list, list(), then the 'causalPAF' package will define and fit the model automatically based on the causal DAG defined by the in_outArg parameter. Alternatively, the user can specify the exact model that the user wishes to use, this model must be in list format (list() where length(response_model_exposure) == 1 ), of length 1, assuming only one exposure of interest (other exposures can be risk factors) and the model must be defined within a list() since the package assumes a list() format is supplied. See example in tutorial. E.G. If physical exercise ("exer") in the example given in the diagram is the exposure. Then the regression would include all parents of "exer" (i.e. sex, region, educ, age) as well as risk factors at the same level of the causal Bayesian network (i.e. stress, smoke, diet, alcoh).}
 
-\item{weights}{A numeric \eqn{n x 1} vector where n is the number of patients in the case control data frame.
-For case control studies, a reweighting approach is used which assumes the prevalence of disease,
-\eqn{\pi} is known, and the sampled disease cases and controls are randomly selected from their respective populations.
-We assume for simplicity that the case:control matching ratio is \eqn{1:r}, for some \eqn{r \ge 1}.
-Under these assumptions, the components of the PAF can be found as the corresponding empirical expectations
-and distributions in the re-weighted dataset where cases are assigned weights 1, and controls are assigned weights
- \eqn{(1\pi−1)/r}. Effectively then we can think of the reweighted population as a random sample.}
+\item{weights}{A numeric n x \eqn{1} vector where n is the number of patients in the case control data frame.
+Different weighting approaches can be applied as per the literature, Pathway-specific population attributable
+fractions (PS-PAF) O'Connell and Ferguson (\eqn{2022}), Revisiting sequential population attributable fractions Ferguson, O'Connell and O'Donnell (\eqn{2020}).
+For more information on weighting, a tutorial paper will be published and linked here when it is published.
+For example, O'Connell and Ferguson (\eqn{2022}), for a case-control study design, when prevalence pi is known, and
+the sampled disease cases and controls are randomly selected from their respective populations. We assume for
+simplicity that the case to control matching ration is \eqn{1} to r, for some r greater than or equal to \eqn{1}.
+Under assumptions outlined in O'Connell and Ferguson (\eqn{2022}), the components of the PAF can be found as the
+corresponding empirical expectations and distributions in the re-weighted dataset where cases are assigned the weights,
+\eqn{1}, and controls are assigned the weights of (((\eqn{1} divided by pi) minus \eqn{1}) all divided by r). Effectively, then we can think of the re-weighted population as a random
+sample. A tutorial paper will be linked here when published for more information which will show how to apply the weighting for different study designs.}
 }
 \value{
 \item{path_specific_PAF }{path specific PAF}

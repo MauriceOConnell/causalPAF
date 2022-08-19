@@ -18,6 +18,7 @@
 #' @examples \dontrun{
 #' # I don't want you to run this
 #' }
+
 do_sim_sequentialPAF <- function(colnum,current_mat, model){
 
         ## polr

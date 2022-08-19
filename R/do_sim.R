@@ -10,6 +10,7 @@
 #' @examples \dontrun{
 #' # I don't want you to run this
 #' }
+
 do_sim <- function(model,dataframe){
 
   y_name <-  as.character(formula(model)[2])

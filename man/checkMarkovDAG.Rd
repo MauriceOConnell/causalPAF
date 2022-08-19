@@ -62,5 +62,5 @@ if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
           in_out list so that all parent variables come before descendants.")
 } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
-               'causalPAF' package cannot be applied for non-Markov DAGs.")}
+               'causalPAF' package cannot be applied for non Markov DAGs.")}
 }

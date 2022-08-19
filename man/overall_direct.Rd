@@ -21,7 +21,7 @@ overall_direct(
 
 \item{exposure}{The exposure name in the form of character string e.g. "phys" for physical exercise.}
 
-\item{mediator}{The mediator name in the form of character string e.g. "whr" for waist-hip ratio.}
+\item{mediator}{The mediator name in the form of character string e.g. "whr" for waist hip ratio.}
 
 \item{response}{The outcome name in the form of character string e.g. "case" for a stroke case.}
 

@@ -40,7 +40,7 @@ pointEstimate(
 
 \item{splinesDefinedIn_in_outDAG}{Logical TRUE or FALSE indicating whether the user has defined splines in the causal DAG, in_out, if TRUE. If FALSE and splines are defined in Splines_outlist_Var, then it is necessary for the package to populate the in_out DAG with splines listed in Splines_outlist_Var.}
 
-\item{model_listArg}{is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\$outlist ) based on its parents given in in_outArg[[1]] ( or in_out\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the 'causalPAF' package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response variable. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.}
+\item{model_listArg}{is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\eqn{\$}outlist ) based on its parents given in in_outArg[[1]] ( or in_out\eqn{\$}inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the 'causalPAF' package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response variable. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.}
 
 \item{weights}{Column of weights for case control matching listed in the same order as the patients in the data e.g. weights = strokedata$weights.}
 
@@ -156,7 +156,7 @@ Splines_outlist = list( c("phys","ahei3tert","nevfcur","alcohfreqwk","global_str
 "ns(apb,knots=quantile(apb,c(.25,.5,.75)),Boundary.knots=quantile(apb,c(.001,.95)))",
 "ns(whr,df=5)","cardiacrfcat","dmhba1c2","case") )
 
-# To fit these models to case control data, one needs to perform weighted maximum-likelihood
+# To fit these models to case control data, one needs to perform weighted maximum likelihood
 # estimation to imitate estimation using a random sample from the population. We chose weights
 # of 0.0035 (for each case) and 0.9965 (for each control), reflective of a yearly incidence of
 # first ischemic stroke of 0.35\%, or 3.5 strokes per 1,000 individuals. These weights were
@@ -196,7 +196,7 @@ if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
           print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
                in_out list so that all parent variables come before descendants.")
           } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
-                        'causalPAF' package cannot be applied for non-Markov DAGs.")}
+                        'causalPAF' package cannot be applied for non Markov DAGs.")}
 
 
 # The pointEstimate() function evaluates Point Estimates for Total PAF, Direct PAF, Indirect PAF
@@ -224,7 +224,7 @@ if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
 
 
 # The pointEstimate() function below has response_model_mediators, response_model_exposure and
-# model_listArg pre-fit. This allows the user to apply customised regressions instead of the
+# model_listArg pre fit. This allows the user to apply customised regressions instead of the
 # default setting above, where the 'causalPAF' R package fitted these regressions automatically
 # based on the causalDAG defined in in_outArg.
 

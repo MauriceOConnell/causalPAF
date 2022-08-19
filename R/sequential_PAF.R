@@ -14,7 +14,7 @@
 #'        list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are
 #'        to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
 #' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
-#' @param NumOrderRiskFactors is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte-Carlo sequential
+#' @param NumOrderRiskFactors is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte Carlo sequential
 #'        attributable fractions for each random permutation.
 #' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include
 #'        splines.
@@ -26,7 +26,7 @@
 #'          plotted so that we can be 95 percent confident the true estimate (that would be calculated from the procedure when the number of simulations m approaches
 #'          infinity) lies in the Monte Carlo interval around the point estimate. The estimates shaded red correspond to a Bayesian network with indirect effects,
 #'          whereas the estimates shaded blue correspond to the Bayesian network with no indirect effects modelled. Note that the Monte Carlo error at position k
-#'          incorporates variation due to random selection of the set of risk factors/exposures that are intervened on in stages 1,...k - 1, and also variation based
+#'          incorporates variation due to random selection of the set of risk factors/exposures that are intervened on in stages 1,...k minus 1, and also variation based
 #'          on the recursive simulation of the disease response. }
 #' \item{SAF_summary }{Returns the data used for the plot containing both the Bayesian network (labelled Bayesian network) with indirect effects modelled and a model
 #'      (labelled usual) with no indirect effects modelled.}
@@ -77,7 +77,7 @@
 #'   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
 #'           in_out list so that all parent variables come before descendants.")
 #' } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
-#'                'causalPAF' package cannot be applied for non-Markov DAGs.")}
+#'                'causalPAF' package cannot be applied for non Markov DAGs.")}
 #'
 #'
 #' w <- rep(1,nrow(stroke_reduced))

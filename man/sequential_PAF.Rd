@@ -32,7 +32,7 @@ to be modelled as splines. Secondly, the second list, outlist, contains a list o
 
 \item{response}{The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.}
 
-\item{NumOrderRiskFactors}{is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte-Carlo sequential
+\item{NumOrderRiskFactors}{is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte Carlo sequential
 attributable fractions for each random permutation.}
 
 \item{addCustom}{Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include
@@ -46,7 +46,7 @@ included within the interaction terms. See tutorial for examples.}
          plotted so that we can be 95 percent confident the true estimate (that would be calculated from the procedure when the number of simulations m approaches
          infinity) lies in the Monte Carlo interval around the point estimate. The estimates shaded red correspond to a Bayesian network with indirect effects,
          whereas the estimates shaded blue correspond to the Bayesian network with no indirect effects modelled. Note that the Monte Carlo error at position k
-         incorporates variation due to random selection of the set of risk factors/exposures that are intervened on in stages 1,...k - 1, and also variation based
+         incorporates variation due to random selection of the set of risk factors/exposures that are intervened on in stages 1,...k minus 1, and also variation based
          on the recursive simulation of the disease response. }
 \item{SAF_summary }{Returns the data used for the plot containing both the Bayesian network (labelled Bayesian network) with indirect effects modelled and a model
      (labelled usual) with no indirect effects modelled.}
@@ -104,7 +104,7 @@ if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
           in_out list so that all parent variables come before descendants.")
 } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
-               'causalPAF' package cannot be applied for non-Markov DAGs.")}
+               'causalPAF' package cannot be applied for non Markov DAGs.")}
 
 
 w <- rep(1,nrow(stroke_reduced))

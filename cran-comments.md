@@ -1,4 +1,19 @@
 ## Test environments
+* R version 4.2.1 (2022-06-23) -- "Funny-Looking Kid" Copyright (C) 2022 The R Foundation for Statistical Computing Platform: x86_64-apple-darwin17.0 (64-bit)
+* win-builder (devel)
+
+This is a resubmission.
+
+## R CMD check results
+R CMD check succeeded
+
+There was one note i.e. Version contains large components (1.2.5.9019). But this note will be removed when the updates are moved to the master file and the version number is shortened to 1.2.5.
+
+1. I addressed all the errors, warnings and notes as per the email from CRAN Prof Brian D Ripley. This was achieved by making the following change. In indirect_PAF_Sjolander_onesimulation.R and path_specific_onesimulation.R, changed Roxygen wording for parameter weighting. In particular, changed the formula for case control weighting in roxygen documentation wording from latex formula format to word format as this formula was causing errors in the new R devel platforms in Windows and Linux. This addressed the errors as per email from Prof Brian D Ripley and Cran on 11th August 2022. I also noted that we have a draft paper which is being prepared for publication, at present, which will be linked to the documentation in the future. This paper will give examples of how to deal with weighting for different study designs when prevalence is known and unknown and other considerations e.g. rare diseases.
+2. I checked the updated causalPAF package on the windows development platform and it passed all these tests and checks.
+
+
+## Test environments
 * local R installation, R 4.1.1
 * ubuntu 16.04 (on travis-ci), R 4.1.1
 * win-builder (devel)

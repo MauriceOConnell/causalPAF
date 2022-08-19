@@ -21,7 +21,7 @@ eval_make_DAG(
 
 \item{regressionMediator}{Regression of response given exposure (mediator as exposure) based on canonical adjustment set output from function make_DAG.R.}
 
-\item{response}{The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.}
+\item{response}{The name of the response column variable within dataframe in text format e.g. ``case''. The cases should be coded as 1 and the controls as 0.}
 
 \item{response_model_mediators}{A model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial.}
 
@@ -37,11 +37,11 @@ eval_make_DAG(
 }
 \description{
 Evaluates and Makes Formula for regression of exposure or risk factor or outcome on its parents in a causal Bayesian network directed acyclic graph. Given a causal Bayesian network, directed acyclic graph (DAG) where arrows representing
-causal dependencies between confounders, risk factors/exposure and disease, together with a sensible probability distribution on
+causal dependencies between confounders, risk factors,exposure and disease, together with a sensible probability distribution on
 the graph that respects these causal dependencies. To consistently estimate causal effects that risk factors may have on each
 other and on disease, we need to make a strong no unmeasured confounding assumption: that is common causes of nodes in the graph,
 which may be causes of two risk factors or a cause of risk factor and disease, are also included as nodes in the graph.
-Causal Bayesian networks have a local Markov property that the conditional probability distribution of any node Xj, given values
-for the other variables in the network, only depends on the values $x_{pa}_{j}$ of the parent nodes.
+Causal Bayesian networks have a local Markov property that the conditional probability distribution of any node \eqn{X_j}, given values
+for the other variables in the network, only depends on the values \eqn{ x_{pa_{j}} } of the parent nodes.
 }
 \keyword{internal}
