@@ -1,0 +1,795 @@
+## Test out with new variables "Occupation" and "mentalHealth"
+in_global_stress2 <- c("subeduc","moteduc","fatduc","Occupation")
+in_mentalHealth <- c("moteduc","Occupation", "global_stress2")
+
+## NB need to mention this in tutorial as likely common error
+## MOC NOTE: This is incorrect since in_mentalHealth and "mentalHealth" should not be defined in in_out[[1]] or in_out[[2]] since it is not a parent of the case or outcome
+# in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,in_mentalHealth, in_subhtn,in_apob_apoa,in_whr,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2", "mentalHealth","subhtn","apob_apoa","whr","cardiacrfcat","dmhba1c2","case"))
+# It should be this instead
+# in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2, in_subhtn,in_apob_apoa,in_whr,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn","apob_apoa","whr","cardiacrfcat","dmhba1c2","case"))
+
+in_sleepApnea <- c("cardiacrfcat")
+in_mineralDeficiency <- c("alcohfreqwk")
+in_drugA <- c("pneumonia")
+
+in_toxicity <- c("drugA")
+in_pneumonia <- c("sleepApnea")
+in_scurvy <- c("mineralDeficiency")
+
+in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2, in_subhtn,in_apob_apoa,in_whr,in_cardiacrfcat,in_dmhba1c2,in_toxicity,in_pneumonia, in_scurvy, in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn","apob_apoa","whr","cardiacrfcat","dmhba1c2","toxicity", "pneumonia", "scurvy","case"))
+
+in_out_NotParentOfCase <- list(inlist=list(in_sleepApnea,in_mineralDeficiency, in_drugA),outlist=c("sleepApnea","mineralDeficiency", "drugA"))
+
+
+
+indices <- 1:length(in_out[[2]])
+indices2 <- 1:length(in_out_NotParentOfCase[[2]])
+
+
+
+# This assumes that e.g. if splines of variables that they are defined in same way before and after exposureIndex, if different it will not work
+# indicesAllparentsAsExposure <- which(lapply(in_out[[1]][indices], function(data_input) all(data_input %in% CombineSubset1 )  ) > 0 )
+indicesAllparentsAsExposure <- which(lapply(in_out[[1]][indices], function(data_input) all(data_input %in% unique(unlist(in_out[[1]][exposureIndex], use.names=FALSE)) )  ) > 0 )
+#indicesAddIn <- exposureIndex + indicesAllparentsAsExposure
+# MAY NEED TO USE unique(unlist()) .....as above ....unique(unlist(in_out[[1]][exposureIndex], use.names=FALSE))
+
+#indicesRemain <- setdiff( indices, indicesAddIn )
+
+CaseIndex <- which(lapply(in_out[[2]][indices], function(data_input) all(response %in% data_input )  ) > 0 )
+# CaseIndex <- exposureIndex + FindCaseIndex
+#
+# indicesRemain <- setdiff( indices, CaseIndex)
+
+indicesChildOfExposure <- which(lapply(in_out[[1]][indices], function(data_input) exposure %in% data_input ) > 0 )
+indicesChildOfExposure2 <- which(lapply( in_out_NotParentOfCase[[1]][indices2], function(data_input) exposure %in% data_input ) > 0 )
+# IndicesExposureIsParent <- indices[ c(FindIndicesExposureIsParent)]
+# ChildOfExposure <- in_out[[2]][IndicesExposureIsParent]
+
+indicesChildOFChildOfExposure <- which(lapply(in_out[[1]][indices], function(data_input) any(in_out[[2]][indicesChildOfExposure] %in% data_input) ) > 0 )
+indicesChildOFChildOfExposure2 <- which(lapply(in_out_NotParentOfCase[[1]][indices2], function(data_input) any(in_out_NotParentOfCase[[2]][indicesChildOfExposure2] %in% data_input) ) > 0 )
+
+IndiceAncestorCheck <- sort(unique(c(CaseIndex, indicesChildOfExposure, indicesChildOFChildOfExposure)))
+IndiceAncestorCheck2 <- sort(unique(c(indicesChildOfExposure2, indicesChildOFChildOfExposure2)))
+AncestorsOfExposureCheck <- c(in_out[[2]][IndiceAncestorCheck], in_out_NotParentOfCase[[2]][IndiceAncestorCheck2])
+
+# indicesAllparentsAsExposure
+RemoveTemp <-  sort( unique( c(1:exposureIndex, indicesAllparentsAsExposure, CaseIndex, indicesChildOfExposure, indicesChildOFChildOfExposure) ), decreasing = FALSE )
+
+
+indicesRemain <- setdiff( indices, RemoveTemp)
+
+# if(is.null(formula)) {
+#     stop("You need to specify a model 'formula', e.g. 'formula=Surv(time,event)~treat'")
+#   }
+
+###############
+###############
+###############
+# in_out_NotParentOfCase[[1]]
+# in_out_NotParentOfCase[[2]]
+#
+# which(lapply(in_out[[1]][indicesRemain], function(data_input) any(in_out[[2]][indicesChildOfExposure] %in% data_input) ) > 0 )
+
+# which(lapply(in_out[[1]][indicesRemain], function(data_input) any(in_out[[2]][indicesChildOFChildOfExposure] %in% data_input) ) > 0 )
+
+# AncestorsOfExposureCheck
+# 1. Create a full list of all ancestors
+# Eithr in in_out[[1]] or in_out_NotParentOfCase[[1]]
+# Store list of ancestors for each parent of case remaining in indicesRemain
+StoreList <- vector(mode = "list", length = length(indicesRemain) )
+# Logical of same size as StoreList: True contains an ancestor of exposoure; FALSE does not contain an ancestor of exposure.
+StoreListIsAncestor <- vector(mode = "list", length = length(indicesRemain) )
+# Indicator whether the variable is in in_out[[2]]
+indicator1 <- vector(mode = "list", length = length(indicesRemain) )
+# Indicator whether the variable is in in_out_NotParentOfCase[[2]]
+indicator2 <- vector(mode = "list", length = length(indicesRemain) )
+# Indicator whether the variable is a variable with no parents (some confounders have no parents) i.e. neither in in_out_NotParentOfCase[[2]] nor in_out_NotParentOfCase[[2]]. May be used as stopping condition.
+indicator3 <- vector(mode = "list", length = length(indicesRemain) )
+# (i) Firstly check if in_out[[1]] has parents of all indicesRemain
+for( i in 1:length(indicesRemain)){
+      StoreList[[i]] <- in_out[[1]][indicesRemain][[i]]
+      # if contains an ancestor of the exposure then skip to next iteration in for loop and set StoreListIsAncestor[[i]] <- TRUE
+      if ( any( StoreList[[i]] %in% AncestorsOfExposureCheck ) ) {
+            StoreListIsAncestor[[i]] <- TRUE
+            next
+      }
+
+      # (ii)
+      for( j in 1:length(StoreList[[i]]) ){
+            # indicator if variable in in_out[[2]] i.e. is a parent of case
+            indicator1[[i]][j] <- StoreList[[i]][j] %in% in_out[[2]]
+            # indicator if variable in in_out_NotParentOfCase[[2]] i.e. not a parent of case
+            indicator2[[i]][j] <- StoreList[[i]][j] %in% in_out_NotParentOfCase[[2]]
+
+            # indicator if a variable with no parents
+            if( indicator1[[i]][j] == FALSE & indicator2[[i]][j] == FALSE ){
+                  indicator3[[i]][j] <- TRUE
+            }else{
+                  # indicator that variable has parents
+                  indicator3[[i]][j] <- FALSE
+            }
+
+            # if not a variable with no parents
+            if( !indicator3[[i]][j] ){
+                  # and is a variable that is a parent of case i.e. in in_out[[2]]
+                  if(indicator1[[i]][j]){
+                        # the index of the variable in in_out[[2]] is position
+                        position <- which(lapply(in_out[[2]], function(data_input) StoreList[[i]][j] %in% data_input ) > 0 )
+
+                        StoreList[[i]][j] <- list( unique(StoreList[[i]][j], in_out[[1]][position]) )
+                    }
+                  # and is a variable that is not a parent of case i.e. in in_out_NotParentOfCase[[2]]
+                  if( indicator2[[i]][j]){
+                        position <- which(lapply(in_out_NotParentOfCase[[2]], function(data_input) StoreList[[i]][j] %in% data_input ) > 0 )
+                    }
+
+            # indicator1[[i]][j]*( StoreList[[i]][j + 1] %in% in_out[[2]] ) + indicator2[[i]][j]*( StoreList[[i]][j + 1] %in% in_out_NotParentOfCase[[2]] )
+
+            }
+      }
+
+}
+
+which(lapply(in_out[[2]], function(data_input) StoreList[[i]][j] %in% data_input ) > 0 )
+
+ij
+indicator1[[2]][1]*which(lapply(in_out[[2]], function(data_input) StoreList[[2]][1] %in% data_input ) > 0 ) + indicator2[[2]][1]*which(lapply(in_out_NotParentOfCase[[2]], function(data_input) StoreList[[2]][1] %in% data_input ) > 0 )
+
+# test <- lapply(StoreList, function(data_input) data_input = in_out[[1]][indicesRemain])
+
+indicator1 <- %in%
+
+indicator2 <- %in%
+# 2. Then check if either the exposure of child of exposure in the list
+
+
+
+
+###############
+###############
+###############
+
+
+if( length( indicesRemain) > 0 ){
+     for( g in indicesRemain ){
+
+          FindIndicesRemainingIsParentOfCase <- which(lapply(in_out[[2]][indicesRemain ], function(data_input) any(in_out[[1]][CaseIndex] %in% data_input ) ) > 0 )
+
+          which(lapply(in_out[[2]][indicesRemain], function(data_input) "global_stress2" %in% data_input )  > 0 )
+
+          indicesRemain[c(FindIndicesRemainingIsParentOfCase)]
+
+          indicesKeep <- unqiue(c(1:exposureIndex, indicesAllparentsAsExposure, indicesRemain[c(FindIndicesRemainingIsParentOfCase)] ))
+     }
+} else{
+      indicesKeep <- unique(c(1:exposureIndex, indicesAllparentsAsExposure ))
+}
+
+
+
+
+
+for(indicesRemain in setdiff( indices, indicesAddIn ) ){
+
+  # NOT AT SAME LEVEL OR A LEVEL BELOW IF:
+  # - if exposure is a parent of remaining variables
+  #IndicesExposureIsParent <- which(lapply(in_out[[1]][indicesRemain], function(data_input) in_out[[2]][exposureIndex ] %in% data_input ) > 0 )
+  FindIndicesExposureIsParent <- which(lapply(in_out[[1]][indicesRemain], function(data_input) exposure %in% data_input ) > 0 )
+  IndicesExposureIsParent <- indicesRemain[ c(FindIndicesExposureIsParent)]
+  ChildOfExposure <- in_out[[2]][IndicesExposureIsParent]
+  # or
+  # - if variables at same level as exposure are a parent of remaining variable
+  # indicesAtSameLevel <- which(lapply(in_out[[1]][c(1:(exposureIndex - 1), indicesAddIn) ], function(data_input) all(data_input %in% in_out[[1]][exposureIndex ] ) ) > 0 )
+  # in_out[[1]][c(1:(exposureIndex - 1), indicesAddIn) ][c(indicesAtSameLevel)]
+  # IndicesSameLevelAsExposParent <- which(lapply(in_out[[1]][indicesRemain], function(data_input) in_out[[2]][exposureIndex ] %in% data_input ) > 0 )
+  # ?????? FINISH OFF
+  # or
+  # - if child of exposure is a parent
+  FindIndicesChildIsParent <- which(lapply(in_out[[1]][indicesRemain], function(data_input) ChildOfExposure %in% data_input ) > 0 )
+  IndicesChildIsParent <- indicesRemain[ c(FindIndicesChildIsParent )]
+  # or
+  # - of child of variable at same level is a parent
+  # or
+  # - case is not a parent of remaining variables
+  ## ?? Remove variables where case is not a child
+  # ISSUE IF PARENT OF EXPOSURE
+  FindRemoveIndicesCaseNotChild <- which(lapply(in_out[[1]][indicesRemain], function(data_input) response !%in% data_input ) > 0 )
+  RemoveIndicesCaseNotChild <- indicesRemain[c(FindRemoveIndicesCaseNotChild)]
+
+  in_out[[1]][indicesRemain]
+
+  in_out[[1]][indicesRemain]
+
+  exposureIndex
+
+  in_out[[1]][c(1:exposureIndex, indicesAddIn) ]
+  in_out[[2]][c(1:exposureIndex, indicesAddIn) ]
+
+   Subset2 <- in_out[[2]][c(1:exposureIndex, indicesAddIn) ]
+   Subset2 <- Splines_outlist[c(1:exposureIndex, indicesAddIn) ]
+
+   setdiff()
+
+  indicesAdditionalAddIn <- which(lapply(in_out[[1]][indicesRemain], function(data_input) any(data_input %in% CombineSubset1 )  ) > 0 )
+
+   indicesAdditionalAddIn <- which(lapply(in_out[[1]][indicesRemain], function(data_input) !any(data_input %in% CombineSubset1 )  ) > 0 )
+  which()
+
+  indicesAdditionalAddIn <- which(lapply(in_out[[1]][indicesRemain], function(data_input) all(data_input %in% CombineSubset1 )  ) > 0 )
+
+}
+
+
+Subset2 <- in_out[[2]][c(1:exposureIndex, indicesAddIn) ]
+
+Splines_outlist[c(1:exposureIndex, indicesAddIn) ]
+
+
+outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn","apob_apoa","whr","cardiacrfcat","dmhba1c2","case")
+
+Splines = TRUE
+Splines_outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","cardiacrfcat","dmhba1c2","case")
+
+diff_set()
+
+
+
+make_formula <- function(in_vars,
+                         outvar,
+                         addCustom = FALSE,
+                         custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + "
+
+make_formula( c(unique(unlist( Subset1, use.names=FALSE)), unique(unlist( Subset2, use.names=FALSE)) ),
+                                    in_out[[2]][responseIndex],
+                                    addCustom = TRUE,
+                                    custom = "~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ")
+
+
+
+dataframe =  stroke_reduced
+                          exposure="phys"
+                          mediator=c("subhtn","apob_apoa","whr")
+                          response="case"
+                          response_model_mediators = response_vs_mediator
+                          # response_model_exposure=response_vs_phys
+                          response_model_exposure = list()
+                          in_outArg = in_out
+                          # model_listArg = model_listpop
+                          model_listArg = list()
+                          weights = stroke_reduced$weights
+                          NumBootstrap = 2
+                          NumSimulation = 2
+                          plot = "bar"
+                          # errorbar = "NA"
+                          fill= "skyblue"
+                          colour="orange"
+                          boxCol="royalblue"
+                          lineCol="darkblue"
+                          summaryCol="royalblue"
+
+
+                     data = dataframe
+                     exposure=exposure
+                     mediator = mediator
+                     response=response
+                     # in_out = in_out, # needs to be in_out = in_outArg,
+                     in_out = in_outArg
+                     w = weights
+
+response_vs_mediator(data = dataframe ,
+                     exposure=exposure,
+                     mediator = mediator,
+                     response=response,
+                     # in_out = in_out, # needs to be in_out = in_outArg,
+                     in_out = in_outArg,
+                     w = weights )
+
+
+response_vs_mediator <-  glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn + ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+ns(whr,df=5)",data = stroke_reduced,family='binomial',w = stroke_reduced$weights )
+
+
+"response_model_exposure_text <-glm(case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn+ apob_apoa+ whr,data=dataframe,family='binomial',w=weights)"
+
+response_vs_mediator <- function(data, exposure="phys",mediator=c("subhtn","apob_apoa","whr"), response="case",in_out, w )
+
+if(length(response_model_mediators) == 0 ){
+
+        response_model_mediators_text <- response_vs_mediator(data = dataframe ,
+                                                          exposure=exposure,
+                                                          mediator = mediator,
+                                                          response=response,
+                                                          # in_out = in_out, # needs to be in_out = in_outArg,
+                                                          in_out = in_outArg,
+                                                          w = weights ) ## CHANGE TO MAKE: NEED TO UPDATE causalPAFplot to link weights to bootstrap$weights below as not defined properly
+# In meantime not running function use this...then delete
+# response_model_mediators_text <- to_execute
+# NOTE this eval() will create the model variable named response_model_mediators_text
+eval(parse(text = response_model_mediators_text ) )
+
+response_model_mediators <-response_model_mediators_text
+########################
+########################
+########################
+
+  }
+# else{ response_model_mediators IS DEFINED BY THE USER IN THE FUNCTION}
+
+
+
+
+
+
+
+
+
+
+####################################################
+####################################################
+####################################################
+plot = "bar"
+
+test <- list()
+
+if(plot == "bar"){
+  1
+               for( Nmed in 1:length(mediator)){
+                      data[[Nmed]] <- data.frame(
+                      name=c("overall", "direct Sjolander", "indirect Sjolander","path specific", "overall Direct"),
+                      mean = results_mediator_table[[Nmed]][1,],
+                      lower95CI = results_mediator_table[[Nmed]][2,],
+                      upper95CI = results_mediator_table[[Nmed]][3,] )
+
+
+                      test[[Nmed]] <- ggplot(data[[Nmed]]) + geom_bar( aes(x = name, y = mean), stat="identity", fill = fill, alpha=0.7) + geom_errorbar( aes(x=name, ymin=lower95CI, ymax = upper95CI), width=0.4, colour = colour, alpha=0.9, size=1.3) + coord_flip()
+                      }
+     }
+
+test
+
+
+
+
+
+
+
+library(causalPAF)
+
+## MOC COMMENT OUT FOR THE MOMENT TO CHECK IF RESULTS WORKING OUT
+stroke_reduced <- strokedata
+
+
+# in_phys <- c("subeduc","moteduc","fatduc")
+# in_ahei <- c("subeduc","moteduc","fatduc")
+# in_nevfcur <- c("subeduc","moteduc","fatduc")
+# in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+# in_global_stress2 <- c("subeduc","moteduc","fatduc")
+# in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+# in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+# in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+# in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp")
+# in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp")
+# in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+#
+# in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,in_htnadmbp,in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","htnadmbp","apob_apoatert","whrs2tert","cardiacrfcat","dmhba1c2","case"))
+
+
+in_phys <- c("subeduc","moteduc","fatduc")
+in_ahei <- c("subeduc","moteduc","fatduc")
+in_nevfcur <- c("subeduc","moteduc","fatduc")
+in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+in_global_stress2 <- c("subeduc","moteduc","fatduc")
+in_subhtn <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_apob_apoa <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_whr <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn")
+in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn")
+in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn","cardiacrfcat","dmhba1c2")
+
+in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,in_subhtn,in_apob_apoa,in_whr,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn","apob_apoa","whr","cardiacrfcat","dmhba1c2","case"))
+
+
+library(MASS)
+library(splines)
+
+response_vs_mediator <-  glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn + ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+ns(whr,df=5)",data = stroke_reduced,family='binomial',w = stroke_reduced$weights )
+
+
+response_vs_phys <- glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2",data = stroke_reduced,family='binomial',w= stroke_reduced$weights)
+
+# NOTE you cannot define model_list = list() within the arugment i.e. cannot do
+# causalPAFplot(... model_list = list(), ...)
+# It must be define outside the function argument as below
+model_list = list()
+
+
+causalPAFplot(dataframe = stroke_reduced,
+                          exposure="phys",
+                          mediator=c("subhtn","apob_apoa","whr"),
+                          response="case",
+                          response_model_mediators=response_vs_mediator,
+                          response_model_exposure=response_vs_phys,
+                          in_outArg = in_out,
+                          model_listArg = model_listpop,
+                          NumBootstrap = 2,
+                          NumSimulation = 2,
+                          plot = "bar",
+                          errorbar = "errorbar",
+                          fill= "skyblue",
+                          colour="orange",
+                          box="royalblue",
+                          line="darkblue",
+                          summary="royalblue")
+
+# causalPAFplot(dataframe = stroke_reduced,
+#               exposure="phys",
+#               mediator=c("subhtn","apob_apoa","whr"),
+#               response="case",
+#               response_model_mediators=response_vs_mediator,
+#               response_model_exposure=response_vs_phys,
+#               in_outArg = in_out,
+#               model_listArg = model_list,
+#               NumBootstrap = 2,
+#               NumSimulation = 3 )
+
+
+
+# #####################
+# #####################
+# NumBootstrap = 2
+# NumSimulation = 3
+# #####################
+# #####################
+#
+# Controls = stroke_reduced[stroke_reduced$case == 0, ]
+#
+# Cases = stroke_reduced[stroke_reduced$case == 1, ]
+#
+#
+# library(splines)
+#
+# #set.seed(10042020)
+# results_subhtn <- matrix(nrow= NumBootstrap,ncol=5)
+# colnames(results_subhtn) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+#
+# results_whr <- matrix(nrow = NumBootstrap,ncol=5)
+# colnames(results_whr) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+#
+# results_apob_apoa <- matrix(nrow = NumBootstrap,ncol=5)
+# colnames(results_apob_apoa) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+#
+# library(dplyr)
+#
+# for ( v in 1:NumBootstrap ){
+#
+#
+#   BootstrapControls = as.data.frame( Controls[sample(nrow(Controls), replace = T), ] )
+#
+#   BootstrapCases = as.data.frame( Cases[sample(nrow(Cases), replace = T), ] )
+#
+#   Bootstrap = as.data.frame(bind_rows(BootstrapCases, BootstrapControls) )
+#
+#
+# model_list <- list()
+# # MOC COMMENTED OUT AS USING Bootstrap$weights instead
+# # w <- rep(1,nrow(Bootstrap))
+# # w[Bootstrap$case==0] <- 0.9965
+# # w[Bootstrap$case==1] <- 0.0035
+# w <- Bootstrap$weights
+#
+#
+#
+#
+# # #####
+# # ## MOC NOTE: index in for loop here may need to be "i" sunce make-formula function uses "i" in it and passes it into this below as "i".
+# # #####
+# # for(i in 1:length(in_out[[2]])){
+# #
+# #
+# #         column <- (1:length(colnames(Bootstrap)))[colnames(Bootstrap) %in% in_out[[2]][i]]
+# #         formula_text <- make_formula(in_out[[1]][[i]],in_out[[2]][i])
+# #         y <- Bootstrap[,column]
+# #         if(length(table(y))==2){
+# #                 theform <- paste("glm(",formula_text,",data=Bootstrap,family='binomial',w=w)",sep='')
+# #         }
+# #         if(length(table(y))>2 & is.factor(y)){
+# #                 theform <- paste("polr(",formula_text,",data=Bootstrap,w=w)",sep='')
+# #         }
+# #         if(length(table(y))>2 & is.numeric(y)){
+# #                 theform <- paste("lm(",formula_text,",data=Bootstrap,w=w)",sep='')
+# #         }
+# #         to_execute <- paste("model_list[[i]] <-", theform,sep='')
+# #         eval(parse(text=to_execute))
+# # }
+# # MOC CREATED FUNCTION FOR THIS INSTEAD
+# model_list <- eval_make_formula(Bootstrap,in_out,model_list, Bootstrap$weights)
+#
+# response_vs_mediator <-  glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn + ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+ns(whr,df=5)",data = Bootstrap,family='binomial',w=w)
+#
+#
+# response_vs_phys <- glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2",data=Bootstrap,family='binomial',w=w)
+#
+#
+#
+#   results_subhtn_simulationStore = matrix(nrow = NumSimulation,ncol=5)
+#   colnames(results_subhtn_simulationStore) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+#
+# for(i in 1:NumSimulation){
+#
+#
+#
+#   results_subhtn_simulationStore[i,1:3] <- indirect_PAF_Sjolander_onesimulation(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="subhtn",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#   results_subhtn_simulationStore[i,4] <- path_specific_onesimulation(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="subhtn",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#   results_subhtn_simulationStore[i,5] <- overall_direct(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="subhtn",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#   flush.console()
+#   print(i)
+# }
+# results_subhtn[v,] = apply(results_subhtn_simulationStore,2,mean)
+#
+#
+#   results_whr_simulationStore = matrix(nrow = NumSimulation,ncol=5)
+#   colnames(results_whr_simulationStore) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+#
+# for(i in 1:NumSimulation){
+#
+#   results_whr_simulationStore[i,1:3] <- indirect_PAF_Sjolander_onesimulation(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="whr",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#   results_whr_simulationStore[i,4] <- path_specific_onesimulation(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="whr",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#
+#   results_whr_simulationStore[i,5] <- overall_direct(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="whr",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#   flush.console()
+#   print(i)
+#  }
+# results_whr[v,] = apply(results_whr_simulationStore,2,mean)
+#
+#
+#   results_apob_apoa_simulationStore = matrix(nrow = NumSimulation, ncol=5)
+#   colnames(results_apob_apoa_simulationStore) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+#
+#   for(i in 1:NumSimulation){
+#
+#   results_apob_apoa_simulationStore[i,1:3] <- indirect_PAF_Sjolander_onesimulation(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="apob_apoa",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#   results_apob_apoa_simulationStore[i,4] <- path_specific_onesimulation(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="apob_apoa",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#   results_apob_apoa_simulationStore[i,5] <- overall_direct(
+#     data_frame = Bootstrap,
+#     exposure="phys",
+#     mediator="apob_apoa",
+#     response="case",
+#     mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),
+#     response_model=response_vs_mediator,
+#     response_model_2=response_vs_phys,
+#     weights=w)
+#
+#   flush.console()
+#   print(i)
+#   }
+#
+#   results_apob_apoa[v,] = apply(results_apob_apoa_simulationStore,2,mean)
+#
+#
+#
+# }
+#
+#
+# results_subhtn_table = matrix(nrow=3, ncol=5)
+# results_subhtn_table[1,] <- apply(results_subhtn,2,mean)
+# results_subhtn_table[2,] <- apply(results_subhtn,2,mean) - 1.96*apply(results_subhtn,2,sd)
+# results_subhtn_table[3,] <- apply(results_subhtn,2,mean) + 1.96*apply(results_subhtn,2,sd)
+# colnames(results_subhtn_table) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+# rownames(results_subhtn_table) <- c("Mean", "Lower 95% C.I.","Upper 95% C.I.")
+# results_subhtn_table
+# results_subhtn_table[1,4]
+#
+# results_whr_table = matrix(nrow=3, ncol=5)
+# results_whr_table[1,] <- apply(results_whr,2,mean)
+# results_whr_table[2,] <- apply(results_whr,2,mean) - 1.96*apply(results_whr,2,sd)
+# results_whr_table[3,] <- apply(results_whr,2,mean) + 1.96*apply(results_whr,2,sd)
+# colnames(results_whr_table) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+# rownames(results_whr_table) <- c("Mean", "Lower 95% C.I.","Upper 95% C.I.")
+# results_whr_table
+# results_whr_table[1,4]
+#
+# results_apob_apoa_table = matrix(nrow=3, ncol=5)
+# results_apob_apoa_table[1,] <- apply(results_apob_apoa,2,mean)
+# results_apob_apoa_table[2,] <- apply(results_apob_apoa,2,mean) - 1.96*apply(results_apob_apoa,2,sd)
+# results_apob_apoa_table[3,] <- apply(results_apob_apoa,2,mean) + 1.96*apply(results_apob_apoa,2,sd)
+# colnames(results_apob_apoa_table) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+# rownames(results_apob_apoa_table) <- c("Mean", "Lower 95% C.I.","Upper 95% C.I.")
+# results_apob_apoa_table
+# results_apob_apoa_table[1,4]
+#
+# # library(forestplot)
+# # Cochrane data from the 'rmeta'-package
+# # cochrane_from_rmeta <-
+# #   structure(list(
+# #     mean  = c(NA, NA, 0.578, 0.165, 0.246, 0.700, 0.348, 0.139, 1.017, NA, 0.531),
+# #     lower = c(NA, NA, 0.372, 0.018, 0.072, 0.333, 0.083, 0.016, 0.365, NA, 0.386),
+# #     upper = c(NA, NA, 0.898, 1.517, 0.833, 1.474, 1.455, 1.209, 2.831, NA, 0.731)),
+# #     .Names = c("mean", "lower", "upper"),
+# #     row.names = c(NA, -11L),
+# #     class = "data.frame")
+# #
+# # tabletext<-cbind(
+# #   c("", "Study", "Auckland", "Block",
+# #     "Doran", "Gamsu", "Morrison", "Papageorgiou",
+# #     "Tauesch", NA, "Summary"),
+# #   c("Deaths", "(steroid)", "36", "1",
+# #     "4", "14", "3", "1",
+# #     "8", NA, NA),
+# #   c("Deaths", "(placebo)", "60", "5",
+# #     "11", "20", "7", "7",
+# #     "10", NA, NA),
+# #   c("", "OR", "0.58", "0.16",
+# #     "0.25", "0.70", "0.35", "0.14",
+# #     "1.02", NA, "0.53"))
+# #
+# # forestplot(tabletext,
+# #            cochrane_from_rmeta,new_page = TRUE,
+# #            is.summary=c(TRUE,TRUE,rep(FALSE,8),TRUE),
+# #            clip=c(0.1,2.5),
+# #            xlog=TRUE,
+# #            col=fpColors(box="royalblue",line="darkblue", summary="royalblue"))
+#
+#
+# ##                  overall direct Sjolander indirect Sjolander path specific
+# ## Mean           0.1373135        0.1211758         0.01613768   0.008052641
+# ## Lower 95% C.I. 0.1009786        0.1017677        -0.00078915   0.005403947
+# ## Upper 95% C.I. 0.1736483        0.1405838         0.03306451   0.010701334
+# ##                overall Direct
+# ## Mean               0.13196928
+# ## Lower 95% C.I.     0.09627076
+# ## Upper 95% C.I.     0.16766779
+#
+#
+# library(forestplot)
+# # Cochrane data from the 'rmeta'-package
+# cochrane_from_rmeta <-
+#   structure(list(
+#     mean  = c(NA, results_subhtn_table[1,1], results_subhtn_table[1,2], results_subhtn_table[1,3], results_subhtn_table[1,4], results_subhtn_table[1,5] ),
+#     lower = c(NA, results_subhtn_table[2,1], results_subhtn_table[2,2], results_subhtn_table[2,3], results_subhtn_table[2,4], results_subhtn_table[2,5]),
+#     upper = c(NA, results_subhtn_table[3,1], results_subhtn_table[3,2], results_subhtn_table[3,3], results_subhtn_table[3,4], results_subhtn_table[3,5])),
+#     .Names = c("mean", "lower 95% C.I.", "upper 95% C.I."),
+#     row.names = c(NA, -4L),
+#     class = "data.frame")
+#
+#
+#
+# tabletext<-cbind(
+#   c("", "overall", "direct Sjolander", "indirect Sjolander",
+#     "path specific", "overall Direct"),
+#   c("Mean", paste(round(results_subhtn_table[1,1],4)) , paste(round(results_subhtn_table[1,2],4)), paste(round(results_subhtn_table[1,3],4)), paste(round(results_subhtn_table[1,4],4)) ,paste(round(results_subhtn_table[1,5],4)) ),
+#   c("lower 95% C.I.", paste(round(results_subhtn_table[2,1],4)) , paste(round(results_subhtn_table[2,2],4)), paste(round(results_subhtn_table[2,3],4)), paste(round(results_subhtn_table[2,4],4)), paste(round(results_subhtn_table[2,5],4)) ),
+#   c("Upper 95% C.I.", paste(round(results_subhtn_table[3,1],4)), paste(round(results_subhtn_table[3,2],4)), paste(round(results_subhtn_table[3,3],4)), paste(round(results_subhtn_table[3,4],4)), paste(round(results_subhtn_table[3,5],4))))
+#
+# forestplot(tabletext,
+#            cochrane_from_rmeta,new_page = TRUE,
+#            is.summary=c(TRUE,rep(FALSE,3)),
+#            clip=c(min(results_subhtn_table) -0.1,max(results_subhtn_table) +0.1),
+#            xlog=FALSE,
+#            col=fpColors(box="royalblue",line="darkblue", summary="royalblue"))
+#
+#
+# #######
+# #######
+# #######
+# cochrane_from_rmeta <-
+#   structure(list(
+#     mean  = c(NA, results_whr_table[1,1], results_whr_table[1,2], results_whr_table[1,3], results_whr_table[1,4], results_whr_table[1,5] ),
+#     lower = c(NA, results_whr_table[2,1], results_whr_table[2,2], results_whr_table[2,3], results_whr_table[2,4], results_whr_table[2,5]),
+#     upper = c(NA, results_whr_table[3,1], results_whr_table[3,2], results_whr_table[3,3], results_whr_table[3,4], results_whr_table[3,5])),
+#     .Names = c("mean", "lower 95% C.I.", "upper 95% C.I."),
+#     row.names = c(NA, -4L),
+#     class = "data.frame")
+#
+#
+# tabletext<-cbind(
+#   c("", "overall", "direct Sjolander", "indirect Sjolander",
+#     "path specific", "overall Direct"),
+#   c("Mean", paste(round(results_whr_table[1,1],4)) , paste(round(results_whr_table[1,2],4)), paste(round(results_whr_table[1,3],4)), paste(round(results_whr_table[1,4],4)) ,paste(round(results_whr_table[1,5],4)) ),
+#   c("lower 95% C.I.", paste(round(results_whr_table[2,1],4)) , paste(round(results_whr_table[2,2],4)), paste(round(results_whr_table[2,3],4)), paste(round(results_whr_table[2,4],4)), paste(round(results_whr_table[2,5],4)) ),
+#   c("Upper 95% C.I.", paste(round(results_whr_table[3,1],4)), paste(round(results_whr_table[3,2],4)), paste(round(results_whr_table[3,3],4)), paste(round(results_whr_table[3,4],4)), paste(round(results_whr_table[3,5],4))))
+#
+# forestplot(tabletext,
+#            cochrane_from_rmeta,new_page = TRUE,
+#            is.summary=c(TRUE,rep(FALSE,3)),
+#            clip=c(min(results_whr_table) -0.1,max(results_whr_table) +0.1),
+#            xlog=FALSE,
+#            col=fpColors(box="royalblue",line="darkblue", summary="royalblue"))
+#
+# #######
+# #######
+# #######
+# cochrane_from_rmeta <-
+#   structure(list(
+#     mean  = c(NA, results_apob_apoa_table[1,1], results_apob_apoa_table[1,2], results_apob_apoa_table[1,3], results_apob_apoa_table[1,4], results_apob_apoa_table[1,5] ),
+#     lower = c(NA, results_apob_apoa_table[2,1], results_apob_apoa_table[2,2], results_apob_apoa_table[2,3], results_apob_apoa_table[2,4], results_apob_apoa_table[2,5]),
+#     upper = c(NA, results_apob_apoa_table[3,1], results_apob_apoa_table[3,2], results_apob_apoa_table[3,3], results_apob_apoa_table[3,4], results_apob_apoa_table[3,5])),
+#     .Names = c("mean", "lower 95% C.I.", "upper 95% C.I."),
+#     row.names = c(NA, -4L),
+#     class = "data.frame")
+#
+#
+# tabletext<-cbind(
+#   c("", "overall", "direct Sjolander", "indirect Sjolander",
+#     "path specific", "overall Direct"),
+#   c("Mean", paste(round(results_apob_apoa_table[1,1],4)) , paste(round(results_apob_apoa_table[1,2],4)), paste(round(results_apob_apoa_table[1,3],4)), paste(round(results_apob_apoa_table[1,4],4)) ,paste(round(results_apob_apoa_table[1,5],4)) ),
+#   c("lower 95% C.I.", paste(round(results_apob_apoa_table[2,1],4)) , paste(round(results_apob_apoa_table[2,2],4)), paste(round(results_apob_apoa_table[2,3],4)), paste(round(results_apob_apoa_table[2,4],4)), paste(round(results_apob_apoa_table[2,5],4)) ),
+#   c("Upper 95% C.I.", paste(round(results_apob_apoa_table[3,1],4)), paste(round(results_apob_apoa_table[3,2],4)), paste(round(results_apob_apoa_table[3,3],4)), paste(round(results_apob_apoa_table[3,4],4)), paste(round(results_whr_table[3,5],4))))
+#
+# forestplot(tabletext,
+#            cochrane_from_rmeta,new_page = TRUE,
+#            is.summary=c(TRUE,rep(FALSE,3)),
+#            clip=c(min(results_apob_apoa_table) -0.1,max(results_apob_apoa_table) +0.1),
+#            xlog=FALSE,
+#            col=fpColors(box="royalblue",line="darkblue", summary="royalblue"))
+

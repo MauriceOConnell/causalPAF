@@ -1,0 +1,282 @@
+setwd("/Users/mauriceoconnell/documents/John Ferguson/Mediation/")
+load('/Users/mauriceoconnell/documents/John Ferguson/sequential_PAF/data_with_income')
+
+# load("C:/Users/0118158S/Desktop/data/data_with_income")
+
+
+#setwd('C:/Users/0118158S/Desktop/path_specific_PAF/')
+library(dplyr)
+library(splines)
+##  reduce set of variables under consideration
+stroke_reduced <- dplyr::select(allstroke, regionnn7, strataid,case,esex, eage,htnadmbp,nevfcur, global_stress2, whr, whrs2tert, phys, alcohfreqwk, dmhba1c2, cardiacrfcat, ahei3tert, apob_apoatert,subeduc,moteduc,fatduc,subhtn,country_name,apob_apoa)
+
+## Alberto's weights for the differing individuals
+
+# load('C:/Users/0118158S/Desktop/data/readData.Rdata')
+load('/Users/mauriceoconnell/documents/John Ferguson/sequential_PAF/readData.Rdata')
+
+tmpDat <- tmpDat %>% dplyr::select(strataid,case01,weights,eage,country,sex)
+tmpDat$id <- paste(tmpDat$strataid,"_",tmpDat$case01,"_",tmpDat$eage,"_",tmpDat$country,"_",tmpDat$sex,sep="")
+
+stroke_reduced$sex_cat <- "Female"
+stroke_reduced$sex_cat[stroke_reduced$esex==2] <- "Male"
+
+stroke_reduced$id <- paste(stroke_reduced$strataid,"_",stroke_reduced$case,"_",stroke_reduced$eage,"_",stroke_reduced$country_name,"_",stroke_reduced$sex_cat,sep="")
+
+stroke_reduced <- merge(stroke_reduced,tmpDat,by="id",all.y=TRUE)
+colnames(stroke_reduced)[colnames(stroke_reduced)=='eage.x'] <- "eage"
+
+
+stroke_reduced <- dplyr::select(stroke_reduced, regionnn7,case,esex, eage,htnadmbp,nevfcur, global_stress2, whrs2tert, phys, alcohfreqwk, dmhba1c2, cardiacrfcat, ahei3tert, apob_apoatert,subeduc,moteduc,fatduc,subhtn,weights, whr, apob_apoa)
+
+
+# set reference levels of all risk factors
+levels(stroke_reduced$htnadmbp) <- c(0, 1)
+stroke_reduced$subhtn <-  factor(stroke_reduced$subhtn,levels=c(1, 2))
+levels(stroke_reduced$nevfcur) <- c(1, 2)
+stroke_reduced$global_stress2  <- factor(stroke_reduced$global_stress2,levels=c(1,2))
+levels(stroke_reduced$whrs2tert) <- c(1, 2, 3)
+levels(stroke_reduced$phys) <- c(2, 1)
+levels(stroke_reduced$alcohfreqwk) <- c(1, 2, 3)
+stroke_reduced$dmhba1c2 <- factor(stroke_reduced$dmhba1c2,levels=c(1,2))
+stroke_reduced$cardiacrfcat <- factor(stroke_reduced$cardiacrfcat,levels=c(1,2))
+levels(stroke_reduced$ahei3tert) <- c(3,2,1)   #  I've changed this from code before
+levels(stroke_reduced$apob_apoatert) <- c(1,2,3)
+
+## remove NAs from important variables
+tokeep <- apply(stroke_reduced,1,function(x){sum(is.na(x))==0})
+# 3042 apob_apoatert missing
+stroke_reduced <- stroke_reduced[tokeep,]
+stroke_reduced$subeduc <- factor(stroke_reduced$subeduc)
+stroke_reduced$moteduc <- factor(stroke_reduced$moteduc)
+stroke_reduced$fatduc <- factor(stroke_reduced$fatduc)
+
+#######################################################
+## START DATA GENERATION RECOMMENDED BY JOHN FERGUSON
+#######################################################
+#######################################################
+#######################################################
+
+########################
+########################
+### CREATE DUMMY DATA
+########################
+########################
+strokedata <- stroke_reduced
+
+# REMOVE WEIGHTS IN DUMMY DATA AS WILL CREATE ALTERNATIVE WEIG
+strokedata <- select(strokedata, -weights)
+
+
+strokedata$eage  <- sample(stroke_reduced$eage)
+## JOHN Ferguson said leave region and sex as is and just simulate age as above
+
+#######################################################
+#######################################################
+#######################################################
+
+
+in_phys <- c("subeduc","moteduc","fatduc")
+in_ahei <- c("subeduc","moteduc","fatduc")
+in_nevfcur <- c("subeduc","moteduc","fatduc")
+in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+in_global_stress2 <- c("subeduc","moteduc","fatduc")
+in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp")
+in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp")
+in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+
+in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,in_htnadmbp,in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","htnadmbp","apob_apoatert","whrs2tert","cardiacrfcat","dmhba1c2","case"))
+
+
+# run logistic models assuming stroke prevalence about 1%
+library(MASS)
+
+make_formula <- function(in_vars,outvar){
+        result <- paste(outvar,"~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ",in_vars[1])
+        if(length(in_vars)>=2){
+
+                for(i in 2:length(in_vars)){
+
+                        result <- paste(result,"+ ",in_vars[i],sep='')
+
+                }
+        }
+        result
+}
+model_list <- list()
+
+
+do_sim <- function(colnum,current_mat, model){
+        ## polr
+        if(names(model)[2]=='zeta'){
+
+                probs <- predict(model,newdata=current_mat,type="probs")
+                mynames <- colnames(probs)
+                return(apply(probs,1,function(x){base::sample(mynames,size=1,prob=x)}))
+        }
+        # glm
+        if(grep("glm",model$call)){
+
+                probs <- predict(model,newdata=current_mat,type="response")
+                if(is.null(levels(current_mat[,colnum]))) return(apply(cbind(1-probs,probs),1,function(x){base::sample(c(0,1),size=1,prob=x)}))
+                return(apply(cbind(1-probs,probs),1,function(x){base::sample(levels(current_mat[,colnum]),size=1,prob=x)}))
+        }
+        # regression
+        if(grep("lm",model$call)){
+
+                pred <- predict(model,newdata=current_mat,type="response")
+                s_d <- sd(model$residuals)
+                return(pred + rnorm(length(pred),mean=0,sd=s_d))
+        }
+}
+
+#################################################################
+#################################################################
+### JOHN FERGUSON ADVISED TO SIMULATE DUMMY DATA WTH NO WEIGTHS
+### SO COMMENT OUT WEIGHTS
+##################################################################
+##################################################################
+# #w <- rep(1,nrow(stroke_reduced))
+# #w[stroke_reduced$case==0] <- 0.99
+# #w[stroke_reduced$case==1] <- 0.01
+# w <- stroke_reduced$weights
+
+# REMOVE WEIGHT FOR SIMULATING DUMMY DATA AS ADVISED BY JOHN FERGUSON
+library(splines)
+for(i in 1:length(in_out[[2]])){
+
+        column <- (1:length(colnames(stroke_reduced)))[colnames(stroke_reduced) %in% in_out[[2]][i]]
+        formula_text <- make_formula(in_out[[1]][[i]],in_out[[2]][i])
+        y <- stroke_reduced[,column]
+        if(length(table(y))==2){
+                # theform <- paste("glm(",formula_text,",data=stroke_reduced,family='binomial',w=w)",sep='')
+                # REMOVE WEIGHT FOR SIMULATING DUMMY DATA AS ADVISED BY JOHN FERGUSON
+                theform <- paste("glm(",formula_text,",data=stroke_reduced,family='binomial')",sep='')
+        }
+        if(length(table(y))>2 & is.factor(y)){
+                # theform <- paste("polr(",formula_text,",data=stroke_reduced,w=w)",sep='')
+                # REMOVE WEIGHT FOR SIMULATING DUMMY DATA AS ADVISED BY JOHN FERGUSON
+                theform <- paste("polr(",formula_text,",data=stroke_reduced)",sep='')
+        }
+        if(length(table(y))>2 & is.numeric(y)){
+                # theform <- paste("lm(",formula_text,",data=stroke_reduced,w=w)",sep='')
+                # REMOVE WEIGHT FOR SIMULATING DUMMY DATA AS ADVISED BY JOHN FERGUSON
+                theform <- paste("lm(",formula_text,",data=stroke_reduced)",sep='')
+        }
+        to_execute <- paste("model_list[[i]] <-", theform,sep='')
+        eval(parse(text=to_execute))
+}
+
+
+
+
+###  simulate a sequential attributable fraction
+
+# current_mat <- stroke_reduced
+# MOC USE strokedata for DUMMY DATA
+current_mat <- strokedata
+dummy_mat <- strokedata
+
+#  columns in database for risk factors (and response)
+col_list <- numeric(11)  ## must be in the same order as in_out[[i]] and model_list[[i]]
+for(i in 1:11) col_list[i] <- (1:ncol(strokedata))[colnames(strokedata)==in_out[[2]][i]]
+
+##  simulate outnode
+
+# ## MOC MAYBE COMMENT OUT
+# col_num <- col_list[1]
+#
+# ## MOC MAYBE COMMENT OUT
+# sim_disease_current_population <- predict(model_list[[11]],type="response")
+
+
+###########################################
+###########################################
+
+# Case has to be in last column of in_out[[2]] for function to work
+SimulateDummyData <- function(col_list, current_mat, dummy_mat ){
+
+        # colname <- colnames(current_mat)[col_num]
+
+        for(i in 1:length(in_out[[2]]) ) {
+                # if not case column use current_mat to simulate
+                if(i < length(in_out[[2]]) ){
+                        if(length(table(current_mat[,col_list[[i]]] ))==1) next ##  don't alter variables that have already been changed
+
+                        if(is.factor(current_mat[,col_list[i]])) dummy_mat[,col_list[i]] <- factor(do_sim(col_list[i],current_mat,model_list[[i]]),levels=levels(current_mat[,col_list[i]]))
+                        if(!is.factor(current_mat[,col_list[i]])) dummy_mat[,col_list[i]] <- do_sim(col_list[i],current_mat,model_list[[i]])
+                }
+
+                # if case column use dummy_mat to simulate
+                if(i == length(in_out[[2]]) ){
+
+                        model_list_dummy <- list()
+
+                        for(j in 1:length(in_out[[2]])){
+
+                                column <- (1:length(colnames(dummy_mat)))[colnames(dummy_mat) %in% in_out[[2]][j]]
+                                formula_text <- make_formula(in_out[[1]][[j]],in_out[[2]][j])
+                                y <- dummy_mat[,column]
+                                if(length(table(y))==2){
+                                        # theform <- paste("glm(",formula_text,",data=stroke_reduced,family='binomial',w=w)",sep='')
+                                        # REMOVE WEIGHT FOR SIMULATING DUMMY DATA AS ADVISED BY JOHN FERGUSON
+                                        theform <- paste("glm(",formula_text,",data=dummy_mat,family='binomial')",sep='')
+                                }
+                                if(length(table(y))>2 & is.factor(y)){
+                                        # theform <- paste("polr(",formula_text,",data=stroke_reduced,w=w)",sep='')
+                                        # REMOVE WEIGHT FOR SIMULATING DUMMY DATA AS ADVISED BY JOHN FERGUSON
+                                        theform <- paste("polr(",formula_text,",data=dummy_mat)",sep='')
+                                }
+                                if(length(table(y))>2 & is.numeric(y)){
+                                        # theform <- paste("lm(",formula_text,",data=stroke_reduced,w=w)",sep='')
+                                        # REMOVE WEIGHT FOR SIMULATING DUMMY DATA AS ADVISED BY JOHN FERGUSON
+                                        theform <- paste("lm(",formula_text,",data=dummy_mat)",sep='')
+                                }
+                                to_execute <- paste("model_list_dummy[[j]] <-", theform,sep='')
+                                eval(parse(text=to_execute))
+                        }
+
+                        if(is.factor(dummy_mat[,col_list[i]])) dummy_mat[,col_list[i]] <- factor(do_sim(col_list[i],dummy_mat,model_list_dummy[[i]]),levels=levels(dummy_mat[,col_list[i]]))
+                        if(!is.factor(dummy_mat[,col_list[i]])) dummy_mat[,col_list[i]] <- do_sim(col_list[i],dummy_mat,model_list_dummy[[i]])
+                }
+        }
+
+        dummy_mat
+}
+
+dummy_mat_simulated <- SimulateDummyData(col_list, current_mat, dummy_mat )
+
+# check
+# table(dummy_mat_simulated$case)
+# table(dummy_mat_simulated$case)[1]
+# table(dummy_mat_simulated$case)[2]
+# table(dummy_mat_simulated$case)[1] - table(dummy_mat_simulated$case)[2]
+# table(stroke_reduced$case)
+# table(stroke_reduced$case)[1]
+# table(stroke_reduced$case)[2]
+# table(stroke_reduced$case)[1] - table(stroke_reduced$case)[2]
+
+w <- rep(1,nrow(dummy_mat_simulated))
+w[dummy_mat_simulated$case==0] <- 0.9965
+w[dummy_mat_simulated$case==1] <- 0.0035
+
+dummy_mat_simulated <- mutate(dummy_mat_simulated, weights = w)
+
+strokedata <- dummy_mat_simulated
+
+save(strokedata, file="/Users/mauriceoconnell/Documents/Rpackages/PAF/causalPAF/data/strokedata.rda", version = 2)
+
+###########################################
+###########################################
+###########################################
+###########################################
+
+
+
+
+
+
+

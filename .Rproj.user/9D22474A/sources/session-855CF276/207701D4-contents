@@ -1,0 +1,58 @@
+#' @title Fictional ischemic stroke data case control data with risk factors, exposures and confounders
+#'
+#' @description A fictional standardized international study of ischemic stroke cases and controls in 32 countries
+#'              in Asia, Europe, Australia, the Middle East and Africa. Information on key causal and modifiable
+#'              risk factors for stroke are included. The risk factors included are healthy eating score
+#'              (in tertiles), physical inactivity (yes/no), smoking behaviour (current smoker or ex/no smoker),
+#'              alcohol intake (no alcohol, moderate consumption, high consumption), an indicator for stress,
+#'              ApoB/ApoA lipid ratio (in tertiles), pre existing hypertension or high measured blood pressure
+#'              (yes/no), waist hip ratio (in tertiles), cardiac risk factors such as atrial fibrillation or
+#'              flutter (yes or no) and a diagnosis of diabetes mellitus or elevated HbA1c(yes/no).
+#'              One needs to assume a causal graph describing the causal relationships between confounders,
+#'              risk factors and disease to implement the methods in the 'causalPAF' package. To do this, it is
+#'              helpful to divide the risk factors and exposures into categories depending on whether they are
+#'              descriptive of an
+#'              individual’s behaviour SB = {Smoking, Alcohol intake, inactivity, diet and stress},
+#'              their physiology SP = {High blood pressure, ApoB/ApoA ratio, Waist hip ratio}
+#'              and what might be regarded as preclinical disease
+#'              SD = {Cardiac risk factors, Pre clinical diabetes}.
+#'              We also consider a set of variables that might be confounders (joint causes of the risk
+#'              factor and stroke) for all the listed risk factors. This set of confounders, SC consist of
+#'              the individuals and their parents’ education level (in 5 levels from no education to holding
+#'              a college Degree), age, gender and region. Here we make the simplifying assumption that disease
+#'              develops in a stage wise fashion, each stage being represented by one of the sets of variables
+#'              just described with variables in earlier stages having causal effects on variables contained in
+#'              later stages, but not vice versa. The ordering of stages is indicated by the sequence,
+#'              {SC , SB , SP , SD , Y }, and summarized by the causal graphs in
+#'              (O’Connell and Ferguson 2020) <https://doi.org/10.1101/2020.10.15.20212845> and
+#'              (Ferguson, O’Connell, and O’Donnell 2020) Revisiting sequential attributable fractions,
+#'              J Ferguson, M O'Connell, M O'Donnell, Archives of Public Health, 2020..
+#' @name strokedata_smallSample
+#' @docType data
+#' @usage strokedata
+#' @keywords datasets
+#' @format A data frame with 5000 rows and 21 variables in columns. Each row representing either a fictional individual stroke case or control:
+#' \describe{
+#'   \item{regionnn7}{ Region (number, 7 categories)}
+#'   \item{case}{Case status (number, 1=cases, 0=controls)}
+#'   \item{esex}{Gender (number, 1=female, 2=male)}
+#'   \item{eage}{,Age based on both DOB and eage (number)}
+#'   \item{htnadmbp}{High blood pressure, Hx HTN/Adjusted BP>140/90 at admission (number, 0=No, 1=Yes)}
+#'   \item{nevfcur}{Smoke history(2lev) (number, 1=Never/Former, 2=Current)}
+#'   \item{global_stress2}{Global Stress, (number, 1=None/some_periods, 2=Several/Perm. periods)}
+#'   \item{whrs2tert}{Tertile of standing waist to hip ratio, WHR (number, 1=Tertile1, 2=Tertile2, 3=Tertile3)}
+#'   \item{phys}{Leisure Physical activity (number, 1=mainly inactive, 2=mainly active)}
+#'   \item{alcohfreqwk}{Alcohol history and frequency(3) (number, 1=Never/Former, 2=Low/Moderate, 3=High intake/Binge)}
+#'   \item{dmhba1c2}{clinically diagnosed diabetes mellitus or measured Hba1c level at least 6.5 yes or no, Hx DM/HbA1c greater than or equal to 6.5 per cent (number, 1=No, 2=Yes)}
+#'   \item{cardiacrfcat}{History of risk factors for heart disease yes or no, Hx Cardiac Risk Factors (number, 1=No, 2=Yes)}
+#'   \item{ahei3tert}{Diet: AHEI diet score (in tertiles) Tertile of Total AHEI Score (not including alcohol), (number, 1=Tertile1, 2=Tertile2, 3=Tertile3)}
+#'   \item{apob_apoatert}{Lipids: Apolipoprotein B/Apolipoprotein A1 ratio (in tertiles) (number, 1=Tertile1, 2=Tertile2, 3=Tertile3)}
+#'   \item{subeduc}{Education (number, 1=None, 2=1 to 8, 3=9 to 12, 4=Trade School, 5=College/University)}
+#'   \item{moteduc}{Mother education (number, 1=None, 2=1 to 8, 3=9 to 12, 4=Trade School, 5=College/University, 6=unknown)}
+#'   \item{fatduc}{Father education (number, 1=None, 2=1 to 8, 3=9 to 12, 4=Trade School, 5=College/University, 6=Unknown)}
+#'   \item{subhtn}{Blood pressure Hx HTN (number, 1=No, 2=Yes)}
+#'   \item{whr}{Waist to hip ratio ( number as continuous variable) }
+#'   \item{apob_apoa}{Lipids: Apolipoprotein B/Apolipoprotein A1 ratio (number as continuous variable)}
+#'   \item{weights}{To fit these models to case control data, one needs to perform weighted maximum likelihood estimation to imitate estimation using a random sample from the population. We chose weights of 0.0035 (for each case) and 0.9965 (for each control), reflective of a yearly incidence of first ischemic stroke of 0.35 per cent, or 3.5 strokes per 1,000 individuals. These weights were chosen according to average incidences across country, age group and gender according to the global burden of disease.}
+#'   }
+NULL

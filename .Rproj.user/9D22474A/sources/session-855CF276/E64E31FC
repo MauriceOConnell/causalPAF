@@ -1,0 +1,26 @@
+{
+    "id": "E64E31FC",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/indirect_PAF_Sjolander_onesimulation.R",
+    "project_path": "R/indirect_PAF_Sjolander_onesimulation.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1622559631466.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "tempName": "Untitled1",
+        "cursorPosition": "29,78",
+        "scrollLine": "22",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660928328,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660928328,
+    "read_only": false,
+    "read_only_alternatives": []
+}

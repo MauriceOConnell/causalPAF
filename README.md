@@ -11,8 +11,8 @@ calculations of population attributable fractions (PAF) given a causal
 diagram which apply both:
 
 1.  Pathway-specific population attributable fractions (PS-PAFs)
-    O’Connell and Ferguson (2020)
-    <https://doi.org/10.1101/2020.10.15.20212845> and
+    O’Connell and Ferguson International Journal of Epidemiology (10
+    May 2022) \< <https://doi.org/10.1093/ije/dyac079>\> and
 2.  Sequential population attributable fractions Ferguson, O’Connell,
     and O’Donnell (2020) <https://doi.org/10.1186/s13690-020-00442-x>.
 
@@ -38,12 +38,12 @@ devtools::install_github("MauriceOConnell/causalPAF")
 
 You start with causalPAF by supplying data and a causal directed acyclic
 graph (DAG). In the R code below, the DAG is defined in the variable
-‘in\_out’. You can then calculate causal population attributable
+‘in_out’. You can then calculate causal population attributable
 fractions (PAFs) using functions such as causalPAFplot() for pathway
 specific PAFs (PS-PAF) with bootstrapped confidence intervals; or the
 pointEstimate() function if only point estimates (with no confidence
 intervals) of the PS-PAF are required. Sequential PAFs are calculated
-using the sequential\_PAF() function.
+using the sequential_PAF() function.
 
 ### Stroke Data
 
@@ -258,7 +258,7 @@ stroke_reduced$weights <- w
                         custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)")
 ```
 
-Sequential PAFs can be calculated using the sequential\_PAF() function.
+Sequential PAFs can be calculated using the sequential_PAF() function.
 Example R code, using ‘strokedata’ is shown below.
 
 ``` r

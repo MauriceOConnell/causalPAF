@@ -1,0 +1,25 @@
+{
+    "id": "2182EAD5",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/pointEstimate.R",
+    "project_path": "R/pointEstimate.R",
+    "type": "r_source",
+    "hash": "1812611496",
+    "contents": "",
+    "dirty": false,
+    "created": 1617709032637.0,
+    "source_on_save": false,
+    "relative_order": 37,
+    "properties": {
+        "cursorPosition": "19,8",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660663141,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660663141560,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,26 @@
+{
+    "id": "512C12BB",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/eval_make_formula.R",
+    "project_path": "R/eval_make_formula.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1617288765814.0,
+    "source_on_save": false,
+    "relative_order": 34,
+    "properties": {
+        "tempName": "Untitled2",
+        "cursorPosition": "10,187",
+        "scrollLine": "1",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660928328,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660928328,
+    "read_only": false,
+    "read_only_alternatives": []
+}

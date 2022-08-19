@@ -1,0 +1,26 @@
+{
+    "id": "16A95FF1",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/make_DAG.R",
+    "project_path": "R/make_DAG.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1618837885894.0,
+    "source_on_save": false,
+    "relative_order": 9,
+    "properties": {
+        "tempName": "Untitled10",
+        "cursorPosition": "4,105",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660928328,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660928328,
+    "read_only": false,
+    "read_only_alternatives": []
+}

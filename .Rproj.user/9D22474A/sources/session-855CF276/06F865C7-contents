@@ -1,0 +1,333 @@
+setwd("/Users/mauriceoconnell/documents/John Ferguson/Mediation/")
+load('/Users/mauriceoconnell/documents/John Ferguson/sequential_PAF/data_with_income')
+
+# load("C:/Users/0118158S/Desktop/data/data_with_income")
+
+
+#setwd('C:/Users/0118158S/Desktop/path_specific_PAF/')
+library(dplyr)
+library(splines)
+##  reduce set of variables under consideration
+stroke_reduced <- dplyr::select(allstroke, regionnn7, strataid,case,esex, eage,htnadmbp,nevfcur, global_stress2, whr, whrs2tert, phys, alcohfreqwk, dmhba1c2, cardiacrfcat, ahei3tert, apob_apoatert,subeduc,moteduc,fatduc,subhtn,country_name,apob_apoa)
+
+## Alberto's weights for the differing individuals
+
+# load('C:/Users/0118158S/Desktop/data/readData.Rdata')
+load('/Users/mauriceoconnell/documents/John Ferguson/sequential_PAF/readData.Rdata')
+
+tmpDat <- tmpDat %>% dplyr::select(strataid,case01,weights,eage,country,sex)
+tmpDat$id <- paste(tmpDat$strataid,"_",tmpDat$case01,"_",tmpDat$eage,"_",tmpDat$country,"_",tmpDat$sex,sep="")
+
+stroke_reduced$sex_cat <- "Female"
+stroke_reduced$sex_cat[stroke_reduced$esex==2] <- "Male"
+
+stroke_reduced$id <- paste(stroke_reduced$strataid,"_",stroke_reduced$case,"_",stroke_reduced$eage,"_",stroke_reduced$country_name,"_",stroke_reduced$sex_cat,sep="")
+
+stroke_reduced <- merge(stroke_reduced,tmpDat,by="id",all.y=TRUE)
+colnames(stroke_reduced)[colnames(stroke_reduced)=='eage.x'] <- "eage"
+
+
+stroke_reduced <- dplyr::select(stroke_reduced, regionnn7,case,esex, eage,htnadmbp,nevfcur, global_stress2, whrs2tert, phys, alcohfreqwk, dmhba1c2, cardiacrfcat, ahei3tert, apob_apoatert,subeduc,moteduc,fatduc,subhtn,weights, whr, apob_apoa)
+
+
+# set reference levels of all risk factors
+levels(stroke_reduced$htnadmbp) <- c(0, 1)
+stroke_reduced$subhtn <-  factor(stroke_reduced$subhtn,levels=c(1, 2))
+levels(stroke_reduced$nevfcur) <- c(1, 2)
+stroke_reduced$global_stress2  <- factor(stroke_reduced$global_stress2,levels=c(1,2))
+levels(stroke_reduced$whrs2tert) <- c(1, 2, 3)
+levels(stroke_reduced$phys) <- c(2, 1)
+levels(stroke_reduced$alcohfreqwk) <- c(1, 2, 3)
+stroke_reduced$dmhba1c2 <- factor(stroke_reduced$dmhba1c2,levels=c(1,2))
+stroke_reduced$cardiacrfcat <- factor(stroke_reduced$cardiacrfcat,levels=c(1,2))
+levels(stroke_reduced$ahei3tert) <- c(3,2,1)   #  I've changed this from code before
+levels(stroke_reduced$apob_apoatert) <- c(1,2,3)
+
+## remove NAs from important variables
+tokeep <- apply(stroke_reduced,1,function(x){sum(is.na(x))==0})
+# 3042 apob_apoatert missing
+stroke_reduced <- stroke_reduced[tokeep,]
+stroke_reduced$subeduc <- factor(stroke_reduced$subeduc)
+stroke_reduced$moteduc <- factor(stroke_reduced$moteduc)
+stroke_reduced$fatduc <- factor(stroke_reduced$fatduc)
+
+
+in_phys <- c("subeduc","moteduc","fatduc")
+in_ahei <- c("subeduc","moteduc","fatduc")
+in_nevfcur <- c("subeduc","moteduc","fatduc")
+in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+in_global_stress2 <- c("subeduc","moteduc","fatduc")
+in_subhtn <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_apob_apoa <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_whr <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn")
+in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn")
+in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn","cardiacrfcat","dmhba1c2")
+
+in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,in_subhtn,in_apob_apoa,in_whr,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn","apob_apoa","whr","cardiacrfcat","dmhba1c2","case"))
+
+
+# run logistic models assuming stroke prevalence about 1%
+library(MASS)
+
+make_formula <- function(in_vars,outvar){
+      result <- paste(outvar,"~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ",in_vars[1])
+        if(length(in_vars)>=2){
+
+                for(i in 2:length(in_vars)){
+
+                        result <- paste(result,"+ ",in_vars[i],sep='')
+
+                }
+        }
+        result
+}
+
+
+indirect_PAF_Sjolander_onesimulation <- function(data_frame=stroke_reduced,exposure="phys",mediator="subhtn",response="case",mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),response_model=response_vs_mediator,response_model_2=response_vs_phys,weights=w){
+        mediator_outcomes <- c()
+        for(i in 1:length(mediator_model)) mediator_outcomes[i] <-  as.character(formula(mediator_model[[i]]))[2]
+        which.model <- grep(paste('^',mediator,'$',sep=''),mediator_outcomes,perl=TRUE)
+        data_frame_direct=data_frame
+        data_frame_direct[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame_direct),perl=TRUE)] <- levels(data_frame_direct[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame),perl=TRUE)])[1]
+        for(i in setdiff(1:length(mediator_model),which.model)){
+          #browser()
+          ### simulate mediators given exposure at reference (except for mediator in question)
+          thecol <- grep(paste('^',mediator_outcomes[i],'$',sep=''),colnames(data_frame_direct),perl=TRUE)
+          data_frame_direct <- do_sim(mediator_model[[i]],data_frame_direct)
+
+        }
+        predicted_response <- predict(response_model,newdata=data_frame_direct,type="response")
+
+       # browser()
+        directPAF <- sum(w*(predict(response_model,type="response")-predicted_response))/sum(w*predict(response_model,type="response"))
+
+
+        ## calculate totalPAF
+        data_frame_total <- data_frame
+        data_frame_total[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame),perl=TRUE)] <- levels(data_frame[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame),perl=TRUE)])[1]
+
+        totalPAF <- sum(w*(predict(response_model_2,type="response")-predict(response_model_2,newdata=data_frame_total,type="response")))/sum(w*predict(response_model_2,type="response"))
+        return(c(totalPAF=totalPAF,directPAF=directPAF,indirectPAF=totalPAF-directPAF))
+
+}
+
+overall_direct <- function(data_frame=stroke_reduced,exposure="phys",mediator="subhtn",response="case",mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),response_model=response_vs_mediator,response_model_2=response_vs_phys,weights=w){
+  mediator_outcomes <- c()
+  for(i in 1:length(mediator_model)) mediator_outcomes[i] <-  as.character(formula(mediator_model[[i]]))[2]
+  which.model <- grep(paste('^',mediator,'$',sep=''),mediator_outcomes,perl=TRUE)
+  data_frame_direct=data_frame
+  data_frame_direct[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame_direct),perl=TRUE)] <- levels(data_frame_direct[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame),perl=TRUE)])[1]
+  predicted_response <- predict(response_model,newdata=data_frame_direct,type="response")
+
+  # browser()
+  directPAF <- sum(w*(predict(response_model,type="response")-predicted_response))/sum(w*predict(response_model,type="response"))
+
+  return(directPAF)
+
+}
+
+
+
+path_specific_onesimulation <- function(data_frame=stroke_reduced,exposure="phys",mediator="subhtn",response="case",mediator_model=list(model_list[[6]],model_list[[7]],model_list[[8]]),response_model=response_vs_mediator,response_model_2=response_vs_phys,weights=w){
+  mediator_outcomes <- c()
+  for(i in 1:length(mediator_model)) mediator_outcomes[i] <-  as.character(formula(mediator_model[[i]]))[2]
+  which.model <- grep(paste('^',mediator,'$',sep=''),mediator_outcomes,perl=TRUE)
+  data_frame_pathspecific=data_frame
+  data_frame_pathspecific[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame_pathspecific),perl=TRUE)] <- levels(data_frame_pathspecific[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame),perl=TRUE)])[1]
+  for(i in which.model){
+
+    ### simulate mediators given exposure at reference (except for mediator in question)
+    thecol <- grep(paste('^',mediator_outcomes[i],'$',sep=''),colnames(data_frame_pathspecific),perl=TRUE)
+    data_frame_pathspecific <- do_sim(mediator_model[[i]],data_frame_pathspecific)
+
+  }
+  #  make sure exposure is set at natural value
+  data_frame_pathspecific[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame_pathspecific),perl=TRUE)] <- data_frame[,grep(paste('^',exposure,'$',sep=''),colnames(data_frame_pathspecific),perl=TRUE)]
+  predicted_response <- predict(response_model,newdata=data_frame_pathspecific,type="response")
+
+  # browser()
+  path_specific_PAF <- sum(w*(predict(response_model,type="response")-predicted_response))/sum(w*predict(response_model,type="response"))
+
+  return(path_specific_PAF)
+}
+
+do_sim <- function(model,dataframe){
+
+  y_name <-  as.character(formula(model)[2])
+  y <- dataframe[,colnames(dataframe)==y_name]
+  if(length(table(y))==2){
+    probs <- predict(model,newdata=dataframe,type='response')
+    predictions <- levels(y)[1+rbinom(n=length(probs),size=1,prob=probs)]
+    #browser()
+    dataframe[,colnames(dataframe)==y_name] <- predictions
+    return(dataframe)
+  }
+  if(length(table(y))>2 & is.factor(y)){
+    mediator_probs <- predict(model,newdata=dataframe,type='probs')
+    a <- apply(mediator_probs,1,function(x){sample(1:ncol(mediator_probs), size=1, prob=x)})
+    predictions <-  levels(y)[a]
+    dataframe[,colnames(dataframe)==y_name] <- predictions
+    return(dataframe)
+  }
+  if(length(table(y))>2 & is.numeric(y)){
+    mean <- predict(model,newdata=dataframe)
+    dataframe[,colnames(dataframe)==y_name] <- mean + sample(summary(model)$resid,size=length(mean),replace=TRUE)
+    return(dataframe)
+  }
+}
+
+
+
+# #####################
+# #####################
+  NumSimulation = 1000
+# #####################
+# #####################
+
+####################
+####################
+## ADD IN POINT ESTIMATE WITHOUT BOOTSTRAP
+##
+####################
+####################
+library(splines)
+
+
+results_subhtn <- matrix(nrow= 1, ncol=5)
+colnames(results_subhtn) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+
+
+results_whr <- matrix(nrow= 1, ncol=5)
+colnames(results_whr) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+
+
+results_apob_apoa <- matrix(nrow= 1, ncol=5 )
+colnames(results_apob_apoa) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+
+
+model_list <- list()
+w <- rep(1,nrow(stroke_reduced))
+w[stroke_reduced$case==0] <- 0.9965
+w[stroke_reduced$case==1] <- 0.0035
+
+
+#####
+## MOC NOTE: index in for loop here may need to be "i" sunce make-formula function uses "i" in it and passes it into this below as "i".
+#####
+for(i in 1:length(in_out[[2]])){
+
+
+        column <- (1:length(colnames(stroke_reduced)))[colnames(stroke_reduced) %in% in_out[[2]][i]]
+        formula_text <- make_formula(in_out[[1]][[i]],in_out[[2]][i])
+        y <- stroke_reduced[,column]
+        if(length(table(y))==2){
+                theform <- paste("glm(",formula_text,",data=stroke_reduced,family='binomial',w=w)",sep='')
+        }
+        if(length(table(y))>2 & is.factor(y)){
+                theform <- paste("polr(",formula_text,",data=stroke_reduced,w=w)",sep='')
+        }
+        if(length(table(y))>2 & is.numeric(y)){
+                theform <- paste("lm(",formula_text,",data=stroke_reduced,w=w)",sep='')
+        }
+        to_execute <- paste("model_list[[i]] <-", theform,sep='')
+        eval(parse(text=to_execute))
+}
+
+
+
+#### MOC: Added in all 3 mediators in one model. Separate models are listed underneath as used previously in earlier versions of model
+response_vs_mediator <-  glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn + ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+ns(whr,df=5)",data = stroke_reduced,family='binomial',w=w)
+
+
+
+###  Model that estimates causal effect of high blood pressure on stroke
+
+# MOC: USED IN PREVIOUS VERSIONS OF MODEL, BUT UPDATED TO INCLUDE ALL 3 MEDIATORS IN "Response_vs_mediator"
+ response_vs_HBP <- glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn",data = stroke_reduced,family='binomial',w=w)
+
+# MOC: USED IN PREVIOUS VERSIONS OF MODEL, BUT UPDATED TO INCLUDE ALL 3 MEDIATORS IN "Response_vs_mediator"
+  response_vs_apob_apoa <- glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ ns(apob_apoa, knots = quantile(stroke_reduced$apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(stroke_reduced$apob_apoa,c(.001,0.95)))", data = stroke_reduced,family = 'binomial', w = w )
+
+
+# MOC: USED IN PREVIOUS VERSIONS OF MODEL, BUT UPDATED TO INCLUDE ALL 3 MEDIATORS IN "Response_vs_mediator"
+  response_vs_whr <- glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ ns(whr , df = 5)",data=stroke_reduced,family='binomial',w=w)
+
+#######
+#######
+
+# MOC: leaving this without mediators
+response_vs_phys <- glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2",data=stroke_reduced,family='binomial',w=w)
+
+
+  results_subhtn_simulationStore = matrix(nrow = NumSimulation,ncol=5)
+  colnames(results_subhtn_simulationStore) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+
+for(i in 1:NumSimulation){
+  results_subhtn_simulationStore[i,1:3] <- indirect_PAF_Sjolander_onesimulation(data_frame = stroke_reduced, mediator="subhtn")
+  results_subhtn_simulationStore[i,4] <- path_specific_onesimulation(data_frame = stroke_reduced, mediator="subhtn")
+  results_subhtn_simulationStore[i,5] <- overall_direct(data_frame = stroke_reduced, mediator="subhtn")
+  flush.console()
+  print(i)
+}
+results_subhtn[1,] = apply(results_subhtn_simulationStore,2,mean)
+
+
+  results_whr_simulationStore = matrix(nrow = NumSimulation,ncol=5)
+  colnames(results_whr_simulationStore) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+
+for(i in 1:NumSimulation){
+  results_whr_simulationStore[i,1:3] <- indirect_PAF_Sjolander_onesimulation(data_frame = stroke_reduced, mediator="whr")
+  results_whr_simulationStore[i,4] <- path_specific_onesimulation(data_frame = stroke_reduced, mediator="whr")
+  results_whr_simulationStore[i,5] <- overall_direct(data_frame = stroke_reduced, mediator="whr")
+  flush.console()
+  print(i)
+ }
+results_whr[1,] = apply(results_whr_simulationStore,2,mean)
+
+  results_apob_apoa_simulationStore = matrix(nrow = NumSimulation,ncol=5)
+  colnames(results_apob_apoa_simulationStore) <- c("overall","direct Sjolander","indirect Sjolander","path specific","overall Direct")
+
+  for(i in 1:NumSimulation){
+  results_apob_apoa_simulationStore[i,1:3] <- indirect_PAF_Sjolander_onesimulation(data_frame = stroke_reduced, mediator="apob_apoa")
+  results_apob_apoa_simulationStore[i,4] <- path_specific_onesimulation(data_frame = stroke_reduced, mediator="apob_apoa")
+  results_apob_apoa_simulationStore[i,5] <- overall_direct(data_frame = stroke_reduced, mediator="apob_apoa")
+  flush.console()
+  print(i)
+  }
+
+  results_apob_apoa[1,] = apply(results_apob_apoa_simulationStore,2,mean)
+
+  results_subhtn
+  results_whr
+  results_apob_apoa
+
+ #############################
+  #############################
+  #############################
+
+####################
+####################
+####################
+
+
+
+# ##########################################
+# ##########################################
+# ##########################################
+# ## MOC CHECK
+# ##########################################
+# ##########################################
+# ##########################################
+# indirect_PAF_Sjolander_onesimulation(data_frame = stroke_reduced, mediator="subhtn")
+# path_specific_onesimulation(data_frame = stroke_reduced, mediator="subhtn")
+# overall_direct(data_frame = stroke_reduced, mediator="subhtn")
+#
+# indirect_PAF_Sjolander_onesimulation(data_frame = stroke_reduced, mediator="whr")
+# path_specific_onesimulation(data_frame = stroke_reduced, mediator="whr")
+# overall_direct(data_frame = stroke_reduced,mediator="whr")
+#
+# indirect_PAF_Sjolander_onesimulation(data_frame = stroke_reduced, mediator="apob_apoa")
+# path_specific_onesimulation(data_frame = stroke_reduced, mediator="apob_apoa")
+# overall_direct(data_frame = stroke_reduced,mediator="apob_apoa")
+#

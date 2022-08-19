@@ -1,0 +1,26 @@
+{
+    "id": "068B445D",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/do_sim_sequentialPAF.R",
+    "project_path": "R/do_sim_sequentialPAF.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1622828073831.0,
+    "source_on_save": false,
+    "relative_order": 17,
+    "properties": {
+        "tempName": "Untitled1",
+        "cursorPosition": "20,0",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660928328,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660928328,
+    "read_only": false,
+    "read_only_alternatives": []
+}

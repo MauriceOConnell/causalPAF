@@ -1,0 +1,25 @@
+{
+    "id": "06F865C7",
+    "path": "~/Documents/John Ferguson/Mediation/MOC_ContinuousMediation/Final_v11/PaperResubmissionEpidemiologyUpdatePointEstimateWithoutBootstrap_v12/mediation_formula_JFerguson_20Aug_BootstrapMOC_pointEstimateNoBootstrap.R",
+    "project_path": null,
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1617368484519.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "cursorPosition": "10,142",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1615911417,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1615911417,
+    "read_only": false,
+    "read_only_alternatives": []
+}

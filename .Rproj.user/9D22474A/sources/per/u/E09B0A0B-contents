@@ -1,0 +1,139 @@
+sequential_PAF.R examples
+
+
+
+#' @examples
+#' \donttest{
+#' # Loads some data (fictional Stroke data from the package 'causalPAF')
+#' # In this example, we use a small data set called 'strokedata_smallSample' consisting of 5,000
+#' # rows of fictional patient data. For more accurate results, a larger data set is available
+#' # called 'strokedata'which contains 16,623 rows of fictional patient data. The methodology
+#' # applied in the 'causalPAF' package is more accurate the larger the dataset. To use the larger
+#' # 'strokedata' dataset, simply call
+#' # stroke_reduced <- strokedata
+#' stroke_reduced <- strokedata_smallSample
+#'
+#' in_phys <- c("subeduc","moteduc","fatduc")
+#' in_ahei <- c("subeduc","moteduc","fatduc")
+#' in_nevfcur <- c("subeduc","moteduc","fatduc")
+#' in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+#' in_global_stress2 <- c("subeduc","moteduc","fatduc")
+#' in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                  "global_stress2")
+#' in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                       "global_stress2")
+#' in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                   "global_stress2")
+#' in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                      "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+#' in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                   "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+#' in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#' "global_stress2", "apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+#'
+#' in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,
+#'                in_htnadmbp, in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,
+#'                in_dmhba1c2,in_case),
+#'                outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2",
+#'                          "htnadmbp","apob_apoatert", "whrs2tert","cardiacrfcat",
+#'                          "dmhba1c2","case"))
+#'
+#'
+#'
+#' if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
+#'   print("Your in_out DAG is a Markov DAG.")
+#' } else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
+#'
+#'   in_out <- checkMarkovDAG(in_out)[[2]]
+#'
+#'   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
+#'           in_out list so that all parent variables come before descendants.")
+#' } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
+#'                'causalPAF' package cannot be applied for non Markov DAGs.")}
+#'
+#'
+#' w <- rep(1,nrow(stroke_reduced))
+#' w[stroke_reduced$case==0] <- 0.9965
+#' w[stroke_reduced$case==1] <- 0.0035
+#'
+#' stroke_reduced$weights <- w
+#'
+#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
+#' # This can take time to run.
+#' sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+#'                                  model_list_var = list(),
+#'                                  weights = w,
+#'                                  in_outDAG = in_out,
+#'                                  response = "case",
+#'                                  NumOrderRiskFactors = 3,
+#'                                  addCustom = TRUE,
+#'                                  custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
+#'
+#'
+#' sequentialPAF$SAF_summary
+#'
+#'
+#'#######################################################################################
+#' # Alternatively, the user can supply a customised model_list_var parameter as follows:
+#' # Libraries must be loaded if fitting models outside of the 'causalPAF' R package.
+#'
+#' library(MASS)
+#' library(splines)
+#'
+#'
+#' # model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based
+#' # on its parents given in in_outDAG$inlist. By default this is set to an empty list.
+#' # Alternatively the user can supply their custom fitted, model_list as follows, which should be
+#' # consistent with the causal structure.
+#' # Note it is important that model_listArg is defined as a list and in the same order and length
+#' # as the variables defined in in_outDAG[[2]].
+#'
+#'
+#' model_list <- list(
+#'  glm(formula = phys ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + moteduc
+#'   + fatduc, family = "binomial", data = stroke_reduced, weights = weights), # model 1 phys
+#'  polr(formula = ahei3tert ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, data = stroke_reduced, weights = weights), # model 2 ahei3tert
+#'  glm(formula = nevfcur ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, family = "binomial",data = stroke_reduced, weights = weights), # model 3 nevfcur
+#'  polr(formula = alcohfreqwk ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, data = stroke_reduced,weights = weights), # model 4 alcohfreqwk
+#'  glm(formula = global_stress2 ~ subeduc + regionnn7 * ns(eage,df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, family = "binomial",data = stroke_reduced,
+#'  weights = weights), # model 5 global_stress2
+#'  glm(formula = htnadmbp ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  family = "binomial",data = stroke_reduced, weights = weights), # model 6 htnadmbp
+#'  polr(formula = apob_apoatert ~ regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  subeduc + moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  data = stroke_reduced,weights = weights), # model 7 apob_apoatert
+#'  polr(formula = whrs2tert ~ regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + subeduc +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  data = stroke_reduced, weights = weights), # model 8 whrs2tert
+#'  glm(formula = cardiacrfcat ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp, family = "binomial",
+#'  data = stroke_reduced, weights = weights), # model 9 cardiacrfcat
+#'  glm(formula = dmhba1c2 ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp, family = "binomial",
+#'  data = stroke_reduced, weights = weights), # model 10 dmhba1c2
+#'  glm(formula = case ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp + cardiacrfcat + dmhba1c2, family = "binomial", data = stroke_reduced,
+#'  weights = weights) # model 11 case
+#'  )
+#'
+#'
+#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
+#' # This can take time to run.
+#'  sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+#'                                   model_list_var = model_list,
+#'                                   weights = stroke_reduced$weights,
+#'                                   in_outDAG = in_out,
+#'                                   response = "case",
+#'                                   NumOrderRiskFactors = 3 )
+#'
+#' sequentialPAF$SAF_summary
+#'
+#' }

@@ -1,0 +1,7 @@
+#' @title Path specific population attributable fraction for a mediating pathway.
+#' @description Path specific population attributable fraction for a mediating pathway.
+#' This metric has several desirable properties. This is a kind of sequential PAF on pathways,
+#' but now corresponding to eliminating the mediating pathway first.
+#' \deqn{PAF_{A->M->Y} = (P(Y=1)-P(Y_{A,M_{0}}=1)/P(Y=1) }
+#' \if{html}{\figure{CausalDAG.jpg} {options: width=100 alt="Causal Bayesian network DAG"} }
+#' \if{latex}{\figure{CausalDAG.jpg}{options: width=1in}}

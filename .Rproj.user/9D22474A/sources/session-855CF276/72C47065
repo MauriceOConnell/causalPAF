@@ -1,0 +1,26 @@
+{
+    "id": "72C47065",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/sim_outnode_2.R",
+    "project_path": "R/sim_outnode_2.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1623153506802.0,
+    "source_on_save": false,
+    "relative_order": 40,
+    "properties": {
+        "tempName": "Untitled1",
+        "cursorPosition": "6,187",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660928328,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660928328,
+    "read_only": false,
+    "read_only_alternatives": []
+}

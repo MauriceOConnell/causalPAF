@@ -1,0 +1,195 @@
+---
+title: "ST4020 Causal Inference: Lecture 10"
+author: "Introduction to Bootstrapping"
+date: "11/03/2021"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Nonparametric bootstrapping
+
+\includegraphics[width=8.5cm]{figure/faithfulpic.jpg} 
+
+## Plan for session
+Knowing how to bootstrap is a key skill in statistics.
+
+In this lecture you will learn
+
+- nonparametric bootstrapping: what it is (and what it isn't)
+- how to do it: coding in R from first principles
+- R package boot
+- some types of bootstrap confidence intervals
+
+The session will be a mix of instruction with examples, and coding that you do.
+
+There is also be a small coding homework.
+
+## Bootstrap sample
+
+Bootstrapping begins with a bootstrap sample.
+
+A **bootstrap sample** is a random sample with replacement from the original data, of the same size as the original data.
+
+For example, suppose my data consist of ten observed waiting times (in minutes) between Old Faithful eruptions:
+
+80, 71, 57, 80, 75, 77, 60, 86, 77, 56
+
+## Bootstrap samples
+
+```{r}
+wait<-c(80, 71, 57, 80, 75, 77,60,86,77,56)
+n<-length(wait)
+
+bsample1<-sample(wait, size = n, replace = TRUE)
+bsample1
+
+bsample2<-sample(wait, size = n, replace = TRUE)
+bsample2
+```
+## Bootstrap samples 
+
+
+\includegraphics[width=8.5cm]{figure/faithfulboot.png} 
+Old faithful waiting times, n = 285 (top), and three bootstrap samples (bottom)
+
+
+## Bootstrapping
+
+We have **no new data** - we can only get new data if we observe and record the times between some more eruptions.
+
+Bootstrapping is not a trick for increasing the sample size.
+
+But it can provide insight into the properties of statistics that we are interested in - for instance the mean, the median, the trimmed mean ... 
+
+Bootstrapping gives us some idea of the **distribution of sample statistics of interest**
+
+## Statistic of interest
+We can calculate the statistic of interest in each bootstrap sample.  Let's say our statistic of interest is the median
+```{r}
+median(bsample1)
+median(bsample2)
+```
+We do this many times to get a **bootstrap distribution** of the statistic of interest
+
+## Repeat many times ...(here 200)
+```{r}
+boot_med<-rep(NA, 200)
+for(i in 1:200){
+boot_med[i]<-median(sample(wait, size = n, replace = TRUE))
+}
+```
+
+## Distribution of the bootstrapped median
+
+```{r}
+hist(boot_med)
+```
+
+## Bootstrapping the mean
+
+\includegraphics[width=8.5cm]{figure/faithfulbmean.png} 
+
+Distribution of mean waiting times by bootstrapping (300 replications) compared with theoretical distribution (CLT)
+
+## Bootstrapping the mean
+
+We have a theory (CLT) about the distribution of the sample mean which gives us an analytic result for the standard error of the sample mean - however for many statistics, such as the median and trimmed mean, there is no such simple result.
+
+However it is easy to bootstrap a statistic.  
+
+The bootstrap standard error of the statistic is just the empirical standard deviation of the bootstrapped statistic distribution.
+
+## R package 
+Simple example: inputs original data, and a function to calculate the statistic of interest.
+Here two arguments to the function: 1. the data 2. vector of indices that define the bootstrap sample.
+```{r}
+library(boot)
+boot_median<-function(mydata,ind)
+     {
+     d<-mydata[ind]
+     median(d)
+}
+
+boot_out<-boot(wait, boot_median, R=200)
+
+
+```
+## R package 
+```{r}
+boot_out
+```
+## R package 
+```{r}
+hist(boot_out$t)
+```
+
+## Time for some coding
+
+- write code to bootstrap the mean of "flexy" in the fractures data
+
+- plot the distribution of bootstrapped means
+
+
+## Bootstrap confidence intervals
+
+There are several approaches to estimating confidence intervals available, including 
+
+- normal confidence intervals
+- percentile confidence intervals
+
+## Bootstrap confidence intervals
+
+```{r}
+boot.ci(boot_out, conf = 0.90, type=c('norm', 'perc'))
+```
+## Coding 
+- compare the normal and percentile confidence intervals for the mean of 'flexy'
+- try this with different numbers of bootstrap reps, eg 200, 500, 1000
+- what do you conclude?
+
+## Bootstrap standard errors and confidence intervals
+
+
+Bootstrapping is often used for estimating standard errors (or other measures of spread) and confidence intervals for statistics of interest.  
+
+Bootstrapped confidence intervals can be more accurate than confidence intervals relying on an assumption of normality of the statistic of interest - especially when this assumption is not correct.  
+
+## Summary
+
+Roughly speaking, the bootstrap is based on the law of large numbers, which says that the empirical distribution of the data is close to its true distribution for large enough sample size.
+
+Resampling **cannot improve the point estimate**.
+
+Another caveat: if the original data is a non-iid sample of a population of interest, bootstrap estimates will be biased.
+
+## Exercise: review of linear regression, and bootstrapping practice
+
+Write code to bootstrap the linear regression coefficient of **surgery** for the linear regression of **flexy** on **surgery** from the **fracture** data.  
+
+Hence calculate normal and percentile confidence intervals and compare with the reported results from the linear regression (ie summary of the linear regression).
+
+## Hints
+
+First write the algorithm to calculate the coefficient.
+
+Recall - to fit the linear regression model in R
+
+```{r}
+fracture<-read_csv("fracture1.csv")
+lm(flexy~surgery, data = fracture)
+```
+
+## Hints
+
+- You will need to extract the coefficient from the lm object
+- using the same setup as for the bootstrap function you have seen this lecture, with multivariate data you need mydata[ind,] instead of mydata[ind]
+ 
+ 
+ 
+
+
+

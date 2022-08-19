@@ -1,0 +1,26 @@
+{
+    "id": "85AF0B2E",
+    "path": "~/Documents/Rpackages/PAF/Tutorial Demo/Tutorial DemoV4.Rmd",
+    "project_path": null,
+    "type": "r_markdown",
+    "hash": "450246308",
+    "contents": "",
+    "dirty": false,
+    "created": 1629120710643.0,
+    "source_on_save": false,
+    "relative_order": 13,
+    "properties": {
+        "cursorPosition": "175,79",
+        "scrollLine": "0",
+        "last_setup_crc32": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1633719011,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1633719011217,
+    "read_only": false,
+    "read_only_alternatives": []
+}

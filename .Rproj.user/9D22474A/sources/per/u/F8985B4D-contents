@@ -1,0 +1,52 @@
+## checkMarkovDAG.R example
+
+
+
+#' @examples
+#' # Loads some data (fictional Stroke data from the package 'causalPAF')
+#' # In this example, we use a small data set called 'strokedata_smallSample' consisting of 5,000
+#' # rows of fictional patient data. For more accurate results, a larger data set is available
+#' # called 'strokedata'which contains 16,623 rows of fictional patient data. The methodology
+#' # applied in the 'causalPAF' package is more accurate the larger the dataset. To use the larger
+#' # 'strokedata' dataset, simply call
+#' # stroke_reduced <- strokedata
+#' stroke_reduced <- strokedata_smallSample
+#'
+#' in_phys <- c("subeduc","moteduc","fatduc")
+#' in_ahei <- c("subeduc","moteduc","fatduc")
+#' in_nevfcur <- c("subeduc","moteduc","fatduc")
+#' in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+#' in_global_stress2 <- c("subeduc","moteduc","fatduc")
+#' in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                  "global_stress2")
+#' in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                       "global_stress2")
+#' in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                   "global_stress2")
+#' in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                      "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+#' in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                   "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+#' in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#' "global_stress2", "apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+#'
+#' in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,
+#'                in_htnadmbp, in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,
+#'                in_dmhba1c2,in_case),
+#'                outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2",
+#'                          "htnadmbp","apob_apoatert", "whrs2tert","cardiacrfcat",
+#'                          "dmhba1c2","case"))
+#'
+#'
+#' if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
+#'   print("Your in_out DAG is a Markov DAG.")
+#' } else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
+#'
+#'   in_out <- checkMarkovDAG(in_out)[[2]]
+#'
+#'   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
+#'           in_out list so that all parent variables come before descendants.")
+#' } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
+#'                'causalPAF' package cannot be applied for non Markov DAGs.")}
+#'                
+#'                

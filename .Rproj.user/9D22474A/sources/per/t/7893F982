@@ -1,0 +1,26 @@
+{
+    "id": "7893F982",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/make_formula.R",
+    "project_path": "R/make_formula.R",
+    "type": "r_source",
+    "hash": "484484138",
+    "contents": "",
+    "dirty": false,
+    "created": 1617288429236.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "tempName": "Untitled1",
+        "cursorPosition": "15,0",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660726234,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660726234927,
+    "read_only": false,
+    "read_only_alternatives": []
+}

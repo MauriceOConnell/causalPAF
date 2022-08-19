@@ -1,0 +1,801 @@
+#' @title Sequential Population Attributable Fractions in a Bayesian Network.
+#'
+#' @description 'sequential_PAF' calculates and plots sequential population attributable fractions (PAF) under a Bayesian network structure.
+#'
+#' @details Patients are listed in rows with variables (i.e. exposure, risk factors, confounders, outcome) listed in columns.
+#' @param dataframe A wide format dataframe containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network.
+#' @param model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based on its parents given in in_outDAG$inlist.
+#'        By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outArg.
+#'        See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_list_var'' with their own fitted
+#'        models for each risk factor, mediator, exposure and response variable. But the order of these models must be in the same order of the variables in the
+#'        second list of in_outDAG. See tutorial for further examples.
+#' @param weights Column of weights for case control matching listed in the same order as the patients in the data e.g. from tutorial weights = strokedata$weights.
+#' @param in_outDAG This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first
+#'        list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are
+#'        to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
+#' @param response The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
+#' @param NumOrderRiskFactors is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte Carlo sequential
+#'        attributable fractions for each random permutation.
+#' @param addCustom Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include
+#'        splines.
+#' @param custom text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be
+#'        included within the interaction terms. See tutorial for examples.
+#' @export
+#' @import stats MASS splines reshape2 ggplot2 gridExtra
+#' @return \item{plot }{ Returns a plot showing the estimated sequential attributable fractions, by position in elimination order. 95 percent confidence intervals are
+#'          plotted so that we can be 95 percent confident the true estimate (that would be calculated from the procedure when the number of simulations m approaches
+#'          infinity) lies in the Monte Carlo interval around the point estimate. The estimates shaded red correspond to a Bayesian network with indirect effects,
+#'          whereas the estimates shaded blue correspond to the Bayesian network with no indirect effects modelled. Note that the Monte Carlo error at position k
+#'          incorporates variation due to random selection of the set of risk factors/exposures that are intervened on in stages 1,...k minus 1, and also variation based
+#'          on the recursive simulation of the disease response. }
+#' \item{SAF_summary }{Returns the data used for the plot containing both the Bayesian network (labelled Bayesian network) with indirect effects modelled and a model
+#'      (labelled usual) with no indirect effects modelled.}
+#' @examples
+#' \donttest{
+#' # Loads some data (fictional Stroke data from the package 'causalPAF')
+#' # In this example, we use a small data set called 'strokedata_smallSample' consisting of 5,000
+#' # rows of fictional patient data. For more accurate results, a larger data set is available
+#' # called 'strokedata'which contains 16,623 rows of fictional patient data. The methodology
+#' # applied in the 'causalPAF' package is more accurate the larger the dataset. To use the larger
+#' # 'strokedata' dataset, simply call
+#' # stroke_reduced <- strokedata
+#' stroke_reduced <- strokedata_smallSample
+#'
+#' in_phys <- c("subeduc","moteduc","fatduc")
+#' in_ahei <- c("subeduc","moteduc","fatduc")
+#' in_nevfcur <- c("subeduc","moteduc","fatduc")
+#' in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+#' in_global_stress2 <- c("subeduc","moteduc","fatduc")
+#' in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                  "global_stress2")
+#' in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                       "global_stress2")
+#' in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                   "global_stress2")
+#' in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                      "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+#' in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#'                   "global_stress2", "apob_apoatert","whrs2tert","htnadmbp")
+#' in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk",
+#' "global_stress2", "apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+#'
+#' in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,
+#'                in_htnadmbp, in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,
+#'                in_dmhba1c2,in_case),
+#'                outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2",
+#'                          "htnadmbp","apob_apoatert", "whrs2tert","cardiacrfcat",
+#'                          "dmhba1c2","case"))
+#'
+#'
+#'
+#' if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
+#'   print("Your in_out DAG is a Markov DAG.")
+#' } else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
+#'
+#'   in_out <- checkMarkovDAG(in_out)[[2]]
+#'
+#'   print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your
+#'           in_out list so that all parent variables come before descendants.")
+#' } else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the
+#'                'causalPAF' package cannot be applied for non Markov DAGs.")}
+#'
+#'
+#' w <- rep(1,nrow(stroke_reduced))
+#' w[stroke_reduced$case==0] <- 0.9965
+#' w[stroke_reduced$case==1] <- 0.0035
+#'
+#' stroke_reduced$weights <- w
+#'
+#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
+#' # This can take time to run.
+#' sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+#'                                  model_list_var = list(),
+#'                                  weights = w,
+#'                                  in_outDAG = in_out,
+#'                                  response = "case",
+#'                                  NumOrderRiskFactors = 3,
+#'                                  addCustom = TRUE,
+#'                                  custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
+#'
+#'
+#' sequentialPAF$SAF_summary
+#'
+#'
+#'#######################################################################################
+#' # Alternatively, the user can supply a customised model_list_var parameter as follows:
+#' # Libraries must be loaded if fitting models outside of the 'causalPAF' R package.
+#'
+#' library(MASS)
+#' library(splines)
+#'
+#'
+#' # model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based
+#' # on its parents given in in_outDAG$inlist. By default this is set to an empty list.
+#' # Alternatively the user can supply their custom fitted, model_list as follows, which should be
+#' # consistent with the causal structure.
+#' # Note it is important that model_listArg is defined as a list and in the same order and length
+#' # as the variables defined in in_outDAG[[2]].
+#'
+#'
+#' model_list <- list(
+#'  glm(formula = phys ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + moteduc
+#'   + fatduc, family = "binomial", data = stroke_reduced, weights = weights), # model 1 phys
+#'  polr(formula = ahei3tert ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, data = stroke_reduced, weights = weights), # model 2 ahei3tert
+#'  glm(formula = nevfcur ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, family = "binomial",data = stroke_reduced, weights = weights), # model 3 nevfcur
+#'  polr(formula = alcohfreqwk ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, data = stroke_reduced,weights = weights), # model 4 alcohfreqwk
+#'  glm(formula = global_stress2 ~ subeduc + regionnn7 * ns(eage,df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc, family = "binomial",data = stroke_reduced,
+#'  weights = weights), # model 5 global_stress2
+#'  glm(formula = htnadmbp ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  family = "binomial",data = stroke_reduced, weights = weights), # model 6 htnadmbp
+#'  polr(formula = apob_apoatert ~ regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  subeduc + moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  data = stroke_reduced,weights = weights), # model 7 apob_apoatert
+#'  polr(formula = whrs2tert ~ regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + subeduc +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2,
+#'  data = stroke_reduced, weights = weights), # model 8 whrs2tert
+#'  glm(formula = cardiacrfcat ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp, family = "binomial",
+#'  data = stroke_reduced, weights = weights), # model 9 cardiacrfcat
+#'  glm(formula = dmhba1c2 ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp, family = "binomial",
+#'  data = stroke_reduced, weights = weights), # model 10 dmhba1c2
+#'  glm(formula = case ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) +
+#'  moteduc + fatduc + phys + ahei3tert + nevfcur + alcohfreqwk + global_stress2 + apob_apoatert +
+#'  whrs2tert + htnadmbp + cardiacrfcat + dmhba1c2, family = "binomial", data = stroke_reduced,
+#'  weights = weights) # model 11 case
+#'  )
+#'
+#'
+#' # 'NumOrderRiskFactors' should be set to a large number to ensure accurate results.
+#' # This can take time to run.
+#'  sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+#'                                   model_list_var = model_list,
+#'                                   weights = stroke_reduced$weights,
+#'                                   in_outDAG = in_out,
+#'                                   response = "case",
+#'                                   NumOrderRiskFactors = 3 )
+#'
+#' sequentialPAF$SAF_summary
+#'
+#' }
+
+sequential_PAF <- function(dataframe, model_list_var, weights = 1, in_outDAG, response, NumOrderRiskFactors,  addCustom = FALSE, custom =""   ){
+
+  # library(stats)
+  # library(MASS)
+  # library(splines)
+  # library(reshape2)
+  # library(ggplot2)
+  # library(gridExtra)
+  #
+  #                                dataframe = stroke_reduced
+  #                                model_list_var = list()
+  #                                weights = w
+  #                                in_outDAG = in_out
+  #                                response = "case"
+  #                                NumOrderRiskFactors = 1000
+  #                                addCustom = TRUE
+  #                                custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)"
+
+
+## TO AVOID THIS ERROR WHEN CHECKING PACKAGE
+# sequential_PAF: no visible binding for global variable ‘risk_factor’
+#   sequential_PAF: no visible binding for global variable ‘location’
+#   sequential_PAF: no visible binding for global variable ‘value’
+#   sequential_PAF: no visible binding for global variable ‘type’
+#   Undefined global functions or variables:
+#     location risk_factor type value
+### SOLUTION PROVIDED HERE https://www.r-bloggers.com/2019/08/no-visible-binding-for-global-variable/
+location <- risk_factor <- type <- value <- NULL
+
+# test2 <- sequential_PAF(dataframe = stroke_reduced,
+#                        model_list_var = model_list,
+#                        weights = stroke_reduced$weights,
+#                        in_outDAG = in_out,
+#                        response = "case",
+#                        NumOrderRiskFactors = 3,
+#                        addCustom = FALSE,
+#                        custom = ""   )
+# # # # IN ORDER TO SEE PLOT THE USER WILL HAVE TO CALL THE RESULT WITH grid.arrange()
+# # grid.arrange(test2$plot)
+
+# test <- sequential_PAF(dataframe = stroke_reduced,
+#                        model_list_var = model_list,
+#                        weights = stroke_reduced$weights,
+#                        in_outDAG = in_out,
+#                        response = "case",
+#                        NumOrderRiskFactors = 3,
+#                        addCustom = FALSE,
+#                        custom = ""   )$plot
+#
+# # IN ORDER TO SEE PLOT THE USER WILL HAVE TO CALL THE RESULT WITH grid.arrange()
+# grid.arrange(test)
+
+# sequential_PAF(dataframe = stroke_reduced,
+#               model_list_var = model_list,
+#               weights = stroke_reduced$weights,
+#               in_outDAG = in_out,
+#               response = "case",
+#               NumOrderRiskFactors = 3,
+#               addCustom = FALSE,
+#               custom = ""   )$SAF_summary
+
+
+  # dataframe = stroke_reduced
+  # model_list_var = model_list
+  # weights = stroke_reduced$weights
+  # in_outDAG = in_out
+  # response = "case"
+  # NumOrderRiskFactors = 10000
+  # # NumOrderRiskFactors = 3
+  # addCustom = FALSE
+  # custom = ""
+
+
+  # dataframe = stroke_reduced
+  # model_list_var = model_list
+  # weights = stroke_reduced$weights
+  # in_outDAG = in_out
+  # response = "case"
+  # NumOrderRiskFactors = 10000
+  # # NumOrderRiskFactors = 3
+  # addCustom = FALSE
+  # custom = ""
+
+      # setwd("/Users/mauriceoconnell/documents/John Ferguson/sequential_PAF/")
+      #
+      # # load('C:/Users/0118158S/OneDrive - National University of Ireland, Galway/data/data_with_income')
+      # load('/Users/mauriceoconnell/documents/John Ferguson/sequential_PAF/data_with_income')
+      #
+      # library(dplyr)
+      #
+      # ##  reduce set of variables under consideration
+      # stroke_reduced <- dplyr::select(allstroke, regionnn7, strataid,case,esex, eage,htnadmbp,nevfcur, global_stress2, whrs2tert, phys, alcohfreqwk, dmhba1c2, cardiacrfcat, ahei3tert, apob_apoatert,subeduc,moteduc,fatduc,subhtn,country_name)
+      #
+      # # head(stroke_reduced)
+      #
+      # # load('C:/Users/0118158S/OneDrive - National University of Ireland, Galway/Average_Attributable_Fraction_Extensions/readData.Rdata')
+      # load('/Users/mauriceoconnell/documents/John Ferguson/sequential_PAF/readData.Rdata')
+      #
+      #
+      # tmpDat <- tmpDat %>% dplyr::select(strataid,case01,weights,eage,country,sex)
+      # tmpDat$id <- paste(tmpDat$strataid,"_",tmpDat$case01,"_",tmpDat$eage,"_",tmpDat$country,"_",tmpDat$sex,sep="")
+      #
+      # stroke_reduced$sex_cat <- "Female"
+      # stroke_reduced$sex_cat[stroke_reduced$esex==2] <- "Male"
+      #
+      # stroke_reduced$id <- paste(stroke_reduced$strataid,"_",stroke_reduced$case,"_",stroke_reduced$eage,"_",stroke_reduced$country_name,"_",stroke_reduced$sex_cat,sep="")
+      #
+      # stroke_reduced <- merge(stroke_reduced,tmpDat,by="id",all.y=TRUE)
+      # colnames(stroke_reduced)[colnames(stroke_reduced)=='eage.x'] <- "eage"
+      #
+      #
+      # stroke_reduced <- dplyr::select(stroke_reduced, regionnn7,case,esex, eage,htnadmbp,nevfcur, global_stress2, whrs2tert, phys, alcohfreqwk, dmhba1c2, cardiacrfcat, ahei3tert, apob_apoatert,subeduc,moteduc,fatduc,subhtn,weights)
+      #
+      #
+      # # set reference levels of all risk factors
+      # levels(stroke_reduced$htnadmbp) <- c(0, 1)
+      # stroke_reduced$subhtn <-  factor(stroke_reduced$subhtn,levels=c(1, 2))
+      # levels(stroke_reduced$nevfcur) <- c(1, 2)
+      # stroke_reduced$global_stress2  <- factor(stroke_reduced$global_stress2,levels=c(1,2))
+      # levels(stroke_reduced$whrs2tert) <- c(1, 2, 3)
+      # levels(stroke_reduced$phys) <- c(2, 1)
+      # levels(stroke_reduced$alcohfreqwk) <- c(1, 2, 3)
+      # stroke_reduced$dmhba1c2 <- factor(stroke_reduced$dmhba1c2,levels=c(1,2))
+      # stroke_reduced$cardiacrfcat <- factor(stroke_reduced$cardiacrfcat,levels=c(1,2))
+      # levels(stroke_reduced$ahei3tert) <- c(3,2,1)   #  I've changed this from code before
+      # levels(stroke_reduced$apob_apoatert) <- c(1,2,3)
+      #
+      # ## remove NAs from important variables
+      # tokeep <- apply(stroke_reduced,1,function(x){sum(is.na(x))==0})
+      # # 3042 apob_apoatert missing
+      # stroke_reduced <- stroke_reduced[tokeep,]
+      #
+      #
+      # in_phys <- c("subeduc","moteduc","fatduc")
+      # in_ahei <- c("subeduc","moteduc","fatduc")
+      # in_nevfcur <- c("subeduc","moteduc","fatduc")
+      # in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+      # in_global_stress2 <- c("subeduc","moteduc","fatduc")
+      # in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+      # in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+      # in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+      # in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp")
+      # in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp")
+      # in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+      #
+      # in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,in_htnadmbp,in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","htnadmbp","apob_apoatert","whrs2tert","cardiacrfcat","dmhba1c2","case"))
+
+
+      # # run logistic models assuming stroke prevalence about 1%
+      # # library(MASS)
+      #
+      # make_formula <- function(in_vars,outvar){
+      #         result <- paste(outvar,"~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) + ",in_vars[1])
+      #         if(length(in_vars)>=2){
+      #
+      #                 for(i in 2:length(in_vars)){
+      #
+      #                         result <- paste(result,"+ ",in_vars[i],sep='')
+      #
+      #                 }
+      #         }
+      #         result
+      # }
+      # # model_list <- list()
+      # # #w <- rep(1,nrow(stroke_reduced))
+      # # #w[stroke_reduced$case==0] <- 0.99
+      # # #w[stroke_reduced$case==1] <- 0.01
+      # # w <- stroke_reduced$weights
+      # #
+      w <- weights
+
+      #################
+      #################
+      ### MAYBE TRY THIS
+      #################
+      #################
+      # library(MASS)
+      # library(splines)
+      model_list_use <- vector(mode = "list", length = length(in_outDAG[[2]]) )
+      model_list_eval <- vector(mode = "list", length = length(in_outDAG[[2]]) )
+
+      if( length(model_list_var) == 0 ){
+      model_list_input <- list()
+
+      # model_list_use <- eval_make_formula(data = Bootstrap, in_out=in_outArg,model_list=model_list_input, w=Bootstrap$weightsAppendColumnToData, addCustom, custom)
+      model_list_use <- eval_make_formula(data = dataframe, in_out = in_outDAG, model_list = model_list_input, w = weights, addCustom, custom)
+      # model_list_use <- eval_make_formula(data = dataframe, in_out = in_outDAG, model_list = model_list_var, w = weights, addCustom, custom)
+
+      for( i in 1:length(model_list_use)){
+        eval(parse(text=model_list_use[[i]]))
+         model_list_eval[[i]] <- model_list_input[[i]]
+      }
+
+} else{
+       model_list_eval <- model_list_var
+}
+
+      #################
+      #################
+
+      # library(splines)
+      # for(i in 1:length(in_outDAG[[2]])){
+      #
+      #         column <- (1:length(colnames(stroke_reduced)))[colnames(stroke_reduced) %in% in_outDAG[[2]][i]]
+      #         formula_text <- make_formula(in_outDAG[[1]][[i]],in_outDAG[[2]][i])
+      #         y <- stroke_reduced[,column]
+      #         if(length(table(y))==2){
+      #                 theform <- paste("glm(",formula_text,",data=stroke_reduced,family='binomial',w=w)",sep='')
+      #         }
+      #         if(length(table(y))>2 & is.factor(y)){
+      #                 theform <- paste("polr(",formula_text,",data=stroke_reduced,w=w)",sep='')
+      #         }
+      #         if(length(table(y))>2 & is.numeric(y)){
+      #                 theform <- paste("lm(",formula_text,",data=stroke_reduced,w=w)",sep='')
+      #         }
+      #         to_execute <- paste("model_list[[i]] <-", theform,sep='')
+      #         eval(parse(text=to_execute))
+      # }
+
+
+
+
+      ###  simulate a sequential attributable fraction
+
+      # current_mat <- stroke_reduced
+      current_mat <- dataframe
+
+      #  columns in database for risk factors (and response)
+      # col_list <- numeric(11)  ## must be in the same order as in_outDAG[[i]] and model_list[[i]]
+      col_list <- numeric( length(in_outDAG[[2]]) )  ## must be in the same order as in_outDAG[[i]] and model_list[[i]]
+      # for(i in 1:11) col_list[i] <- (1:ncol(stroke_reduced))[colnames(stroke_reduced)==in_outDAG[[2]][i]]
+      for(i in 1:( length(in_outDAG[[2]]) )  ) col_list[i] <- (1:ncol(dataframe))[colnames(dataframe) == in_outDAG[[2]][i]]
+
+      ##  simulate outnode
+
+      ##### col_num NEEDS TO BE CHOSEN RANDOMLY LATER ON????
+      col_num <- col_list[1]
+
+      # sim_disease_current_population <- predict(model_list[[11]],type="response")
+      sim_disease_current_population <- predict(model_list_eval[[ length(in_outDAG[[2]]) ]],type="response")
+
+      ###############
+      ###############
+      ##### col_num NEEDS TO BE CHOSEN RANDOMLY LATER ON????
+      # test <- sim_outnode(col_num = col_num, current_mat = current_mat)
+      # test1 <- sim_outnode(dataframe = dataframe, col_num = col_num, current_mat = current_mat, in_outArg = in_outDAG, col_list = col_list, model_list = model_list_eval)
+      ###############
+      ###############
+
+      # ##### col_num NEEDS TO BE CHOSEN RANDOMLY LATER ON????
+      # sim_outnode <- function(col_num, current_mat ){
+      #
+      #         ##  set current_mat[,col_num] to reference, otherwise to 0
+      #         if(is.factor(current_mat[,col_num])) current_mat[,col_num] <- levels(stroke_reduced[,col_num])[1]
+      #         if(is.numeric(current_mat[,col_num])) current_mat[,col_num] <- 0
+      #
+      #         colname <- colnames(current_mat)[col_num]
+      #
+      #         #cols_to_simulate <- c()
+      #
+      #         # simulate variable if direct arrow from colname to variable i.
+      #         for(i in 1:length(in_outDAG[[1]])){
+      #                 if(colname %in% in_outDAG[[1]][[i]]){
+      #                         if(length(table(current_mat[,col_list[[i]]] ))==1) next ##  don't alter variables that have already been changed
+      #
+      #                         if(is.factor(current_mat[,col_list[i]])) current_mat[,col_list[i]] <- factor(do_sim(col_list[i],current_mat,model_list[[i]]),levels=levels(current_mat[,col_list[i]]))
+      #                         if(!is.factor(current_mat[,col_list[i]])) current_mat[,col_list[i]] <- do_sim(col_list[i],current_mat,model_list[[i]])
+      #                 }
+      #         }
+      #         current_mat
+      # }
+
+      ###  second type of simulation where only one risk factor affected by intervention
+
+      response_col_num <- (1:length(col_list))[lapply(in_outDAG[[2]], function(data_input) data_input == response ) == TRUE ]
+
+      # test2 <- sim_outnode_2(dataframe = dataframe, col_num = col_num, current_mat = current_mat, col_list = col_list, model_list =  model_list_eval, response_col_num = response_col_num, in_outArg = in_outDAG )
+
+      # sim_outnode_2 <- function(col_num, current_mat){
+      #
+      #         ##  set current_mat[,col_num] to reference, otherwise to 0
+      #         if(is.factor(current_mat[,col_num])) current_mat[,col_num] <- levels(stroke_reduced[,col_num])[1]
+      #         if(is.numeric(current_mat[,col_num])) current_mat[,col_num] <- 0
+      #
+      #         colname <- colnames(current_mat)[col_num]
+      #
+      #         #cols_to_simulate <- c()
+      #
+      #         # simulate variable if direct arrow from colname to variable i (just last column) or 11th column
+      #         i <- 11
+      #
+      #         if(is.factor(current_mat[,col_list[i]])) current_mat[,col_list[i]] <- factor(do_sim(col_list[i],current_mat,model_list[[i]]),levels=levels(current_mat[,col_list[i]]))
+      #         if(!is.factor(current_mat[,col_list[i]])) current_mat[,col_list[i]] <- do_sim(col_list[i],current_mat,model_list[[i]])
+      #         current_mat
+      # }
+
+
+      # ##  simulate from ordinal regression ...
+      #
+      #
+      # do_sim <- function(colnum,current_mat, model){
+      #         ## polr
+      #         if(names(model)[2]=='zeta'){
+      #
+      #                 probs <- predict(model,newdata=current_mat,type="probs")
+      #                 mynames <- colnames(probs)
+      #                 return(apply(probs,1,function(x){base::sample(mynames,size=1,prob=x)}))
+      #         }
+      #         # glm
+      #         if(grep("glm",model$call)){
+      #
+      #                 probs <- predict(model,newdata=current_mat,type="response")
+      #                 if(is.null(levels(current_mat[,colnum]))) return(apply(cbind(1-probs,probs),1,function(x){base::sample(c(0,1),size=1,prob=x)}))
+      #                 return(apply(cbind(1-probs,probs),1,function(x){base::sample(levels(current_mat[,colnum]),size=1,prob=x)}))
+      #         }
+      #         # regression
+      #         if(grep("lm",model$call)){
+      #
+      #                 pred <- predict(model,newdata=current_mat,type="response")
+      #                 s_d <- sd(model$residuals)
+      #                 return(pred + rnorm(length(pred),mean=0,sd=s_d))
+      #         }
+      # }
+
+
+
+
+
+      #####  next see if I can calculate sequential attributable fractions.
+
+      indicesExcludingResponse <- setdiff((1:length(in_outDAG[[2]]) ),response_col_num )
+
+
+      ## THIS MEANS THE response variable needs to be listed last
+      # the_order <- col_list[1:10][sample(1:10,10)]    #  order of columns in calculating sequential attributable fractions
+      the_order <- col_list[indicesExcludingResponse][sample(indicesExcludingResponse, length(indicesExcludingResponse) )]    #  order of columns in calculating sequential attributable fractions
+
+      # reverse_order <- numeric(10)
+      reverse_order <- numeric( length(indicesExcludingResponse) )
+      # for(i in 1:10) reverse_order[i] <- (1:10)[the_order==col_list[i]]  # where was col_list[i] in this calculation; needed to pick off sequential PAFs
+      for(i in 1:length(indicesExcludingResponse) ) reverse_order[i] <- ( indicesExcludingResponse )[the_order==col_list[i]]  # where was col_list[i] in this calculation; needed to pick off sequential PAFs
+
+      # current_mat <- stroke_reduced
+      current_mat <- dataframe
+      # SAF <- numeric(10)
+      SAF <- numeric( length(indicesExcludingResponse) )
+      no_intervention <- sim_disease_current_population
+
+      ### sim_outnode(dataframe = dataframe, col_num = the_order[2], current_mat = current_mat, in_outArg = in_outDAG, col_list = col_list, model_list = model_list_eval)
+      for(i in 1:length(the_order)){
+
+              # current_mat <- sim_outnode(the_order[i],current_mat)
+              current_mat <- sim_outnode(dataframe = dataframe, col_num = the_order[i], current_mat = current_mat, in_outArg = in_outDAG, col_list = col_list, model_list = model_list_eval)
+              SAF[i] <- (sum(w*no_intervention) - sum(w*current_mat$case))
+              no_intervention <- current_mat$case
+              flush.console()
+              print(i)
+
+      }
+      SAF <- SAF/sum(w*sim_disease_current_population)
+      SAF <- SAF[reverse_order]
+
+      # now try looping this
+      ##################################################
+      ### NEED TO SET OPTION TO SEED SEED IF WE WANT TO
+      ##################################################
+      # set.seed(27092019)
+      # SAF_mat <- matrix(0,nrow=10000,ncol=10)
+      SAF_mat <- matrix(0,nrow = NumOrderRiskFactors,ncol = length(indicesExcludingResponse) )
+      # SAF_mat_2 <- matrix(0,nrow=10000,ncol=10)
+      SAF_mat_2 <- matrix(0,nrow = NumOrderRiskFactors,ncol = length(indicesExcludingResponse) )
+      # order_mat <- matrix(0,nrow=10000,ncol=10)
+      order_mat <- matrix(0,nrow = NumOrderRiskFactors,ncol = length(indicesExcludingResponse) )
+      # reverse_order_mat <- matrix(0,nrow=10000,ncol=10)
+      reverse_order_mat <- matrix(0,nrow = NumOrderRiskFactors,ncol = length(indicesExcludingResponse) )
+      for(i in 1:NumOrderRiskFactors){
+
+              # the_order <- col_list[1:10][sample(1:10,10)]     # order of columns in calculating sequential attributable fractions
+              the_order <- col_list[1:length(indicesExcludingResponse) ][sample(1:length(indicesExcludingResponse), length(indicesExcludingResponse) )]     # order of columns in calculating sequential attributable fractions
+
+              # reverse_order <- numeric(10)
+              reverse_order <- numeric( length(indicesExcludingResponse) )
+              # for(j in 1:10) reverse_order[j] <- (1:10)[the_order==col_list[j]]  # where was col_list[i] in this calculation; needed to pick off sequential PAFs
+              for(j in 1:length(indicesExcludingResponse) ){
+                    reverse_order[j] <- (1:length(indicesExcludingResponse) )[the_order == col_list[j]]  # where was col_list[i] in this calculation; needed to pick off sequential PAFs
+              }
+
+              # current_mat <- stroke_reduced
+              current_mat <- dataframe
+              # current_mat_2 <- stroke_reduced
+              current_mat_2 <- dataframe
+              # SAF <- numeric(10)
+              SAF <- numeric( length(indicesExcludingResponse) )
+              # SAF_2 <- numeric(10)
+              SAF_2 <- numeric( length(indicesExcludingResponse) )
+              # no_intervention <- sim_disease_current_population
+              no_intervention <- sim_disease_current_population
+              ##  parallel copies of variables when APAF calculated the old way.
+              # no_intervention_2 <- sim_disease_current_population
+              no_intervention_2 <- sim_disease_current_population
+              for(j in 1:length(the_order)){
+
+                      # current_mat <- sim_outnode(the_order[j],current_mat)
+                      current_mat <- sim_outnode(dataframe = dataframe, col_num = the_order[j], current_mat = current_mat, in_outArg = in_outDAG, col_list = col_list, model_list = model_list_eval)
+                      # current_mat_2 <- sim_outnode_2(the_order[j],current_mat_2)
+                      current_mat_2 <- sim_outnode_2(dataframe = dataframe, col_num = the_order[j], current_mat = current_mat, col_list = col_list, model_list = model_list_eval, response_col_num = response_col_num, in_outArg = in_outDAG )
+                      SAF[j] <- (sum(w*no_intervention) - sum(w*current_mat$case))
+                      SAF_2[j] <- (sum(w*no_intervention_2) - sum(w*current_mat_2$case))
+                      no_intervention <- current_mat$case
+                      no_intervention_2 <- current_mat_2$case
+                      #flush.console()
+                      #print(j)
+
+              }
+              SAF <- SAF/sum(w*sim_disease_current_population)
+              SAF_2 <- SAF_2/sum(w*sim_disease_current_population)
+              SAF_mat[i,] <- SAF[reverse_order]
+              SAF_mat_2[i,] <- SAF_2[reverse_order]
+              order_mat[i,] <- the_order
+              reverse_order_mat[i,] <- reverse_order
+              flush.console()
+              print(i)
+
+      }
+
+      # # MAURICE O OCONNELL NOTE: LOCATION SAVED BY DR JOHN FERGUSON
+      # save(SAF_mat, SAF_mat_2, order_mat, reverse_order_mat, model_list,col_list,stroke_reduced,w, file="C:/Users/0118158S/OneDrive - National University of Ireland, Galway/Average_Attributable_Fraction_Extensions/R_objects")
+
+
+      # ## LINE ADDED IN BY Maurice O Connell TO AVOID RUNNING FOR LOOP ABOVE
+      # load('/Users/mauriceoconnell/documents/John Ferguson/sequential_PAF/R_objects')
+
+
+      # colnames(SAF_mat) <- colnames(stroke_reduced)[col_list][1:10]
+      colnames(SAF_mat) <- colnames(dataframe)[col_list][1:length(indicesExcludingResponse) ]
+
+      # colnames(SAF_mat_2) <- colnames(stroke_reduced)[col_list][1:10]
+      colnames(SAF_mat_2) <- colnames(dataframe)[col_list][1:length(indicesExcludingResponse) ]
+
+      # colnames(reverse_order_mat) <- colnames(stroke_reduced)[col_list][1:10]
+      colnames(reverse_order_mat) <- colnames(dataframe)[col_list][1:length(indicesExcludingResponse) ]
+
+
+
+      # apply(SAF_mat,2,mean)
+      # SAF_summary <- matrix(0,nrow=10,ncol=10)
+      SAF_summary <- matrix(0,nrow = length(indicesExcludingResponse), ncol = length(indicesExcludingResponse) )
+      # SAF_2_summary <- matrix(0,nrow=10,ncol=10)
+      SAF_2_summary <- matrix(0, nrow = length(indicesExcludingResponse), ncol = length(indicesExcludingResponse) )
+      # SAF_diff <- matrix(0,nrow=10,ncol=10)
+      SAF_diff <- matrix(0,nrow = length(indicesExcludingResponse), ncol = length(indicesExcludingResponse) )
+      colnames(SAF_summary) <- colnames(SAF_mat)
+
+      colnames(SAF_2_summary) <- colnames(SAF_mat_2)
+      colnames(SAF_diff) <- colnames(SAF_mat_2)
+
+      # for(i in 1:10){
+      #         for(j in 1:10){
+      for(i in 1:length(indicesExcludingResponse) ){
+              for(j in 1:length(indicesExcludingResponse) ){
+                      SAF_summary[i,j] <- mean(SAF_mat[,j][order_mat[,i]==col_list[j]])
+                      SAF_2_summary[i,j] <- mean(SAF_mat_2[,j][order_mat[,i]==col_list[j]])
+                      SAF_diff[i,j] <- mean((SAF_mat[,j]-SAF_mat_2[,j])[order_mat[,i]==col_list[j]])
+              }
+      }
+
+      # ME_SAF_summary <- matrix(0, nrow = 10 , ncol = 10 )
+      ME_SAF_summary <- matrix(0, nrow = length(indicesExcludingResponse) , ncol = length(indicesExcludingResponse) )
+      # ME_SAF_2_summary <- matrix(0,nrow=10,ncol=10)
+      ME_SAF_2_summary <- matrix(0, nrow = length(indicesExcludingResponse), ncol = length(indicesExcludingResponse) )
+      # ME_SAF_diff <- matrix(0,nrow=10,ncol=10)
+      ME_SAF_diff <- matrix(0, nrow = length(indicesExcludingResponse) , ncol = length(indicesExcludingResponse) )
+      colnames(ME_SAF_summary) <- colnames(SAF_mat)
+
+      colnames(ME_SAF_2_summary) <- colnames(SAF_mat_2)
+      colnames(ME_SAF_diff) <- colnames(SAF_mat_2)
+
+      # for(i in 1:10){
+      #         for(j in 1:10){
+      for(i in 1:length(indicesExcludingResponse) ){
+              for(j in 1:length(indicesExcludingResponse) ){
+                      ME_SAF_summary[i,j] <- qt(0.975, df=sum(order_mat[,i]==col_list[j])-1)*sd(SAF_mat[,j][order_mat[,i]==col_list[j]])/sqrt(sum(order_mat[,i]==col_list[j]))
+                      ME_SAF_2_summary[i,j] <- qt(0.975, df=sum(order_mat[,i]==col_list[j])-1)*sd(SAF_mat_2[,j][order_mat[,i]==col_list[j]])/sqrt(sum(order_mat[,i]==col_list[j]))
+                      ME_SAF_diff[i,j] <- qt(0.975, df=sum(order_mat[,i]==col_list[j])-1)*sd((SAF_mat[,j]-SAF_mat_2[,j])[order_mat[,i]==col_list[j]])/sqrt(sum(order_mat[,i]==col_list[j]))
+              }
+      }
+
+      ##  Make SAF_summary and SAF_summary_2 into data frames
+      # library(reshape2)
+
+      ## to store for later
+      temp1 <- melt(SAF_summary)
+      temp2 <- melt(SAF_2_summary)
+      temp3 <- melt(ME_SAF_diff)
+
+      SAF_summary <- cbind(melt(SAF_summary),ME=melt(ME_SAF_summary)[,3])
+      colnames(SAF_summary)[1] <- "location"
+      SAF_summary$type <- 'Bayesian network'
+      SAF_2_summary <- cbind(melt(SAF_2_summary),ME=melt(ME_SAF_2_summary)[,3])
+      colnames(SAF_2_summary)[1] <- "location"
+      SAF_2_summary$type <- 'usual'
+      SAF_summary <- rbind(SAF_summary,SAF_2_summary)
+      colnames(SAF_summary)[2] <- "risk_factor"
+
+
+
+      UB <- (temp1$value+temp2$value)/2+temp3$value/2
+      LB <- (temp1$value+temp2$value)/2-temp3$value/2
+
+      UB2 <- SAF_summary$value+SAF_summary$ME/sqrt(2)
+      LB2 <- SAF_summary$value-SAF_summary$ME/sqrt(2)
+
+      #SAF_summary$UB <- c(UB,UB)
+      #SAF_summary$LB <- c(LB,LB)
+
+      # quartz()
+
+
+      SAF_summary$UB <- c(UB2)
+      SAF_summary$LB <- c(LB2)
+      # library(ggplot2)
+      varNamePlot <- vector(mode = "list", length = length( indicesExcludingResponse) )
+      for( q in 1:length(indicesExcludingResponse) ){
+
+            ### NB WORKS WHEN USED DPLYR FILTER SO NEED TO USE DPLYR filter
+
+            # TRY == as want exact match rather than %in% which will include partial matches
+            varNamePlot[[q]] <- ggplot(data = subset(SAF_summary, risk_factor == c( in_outDAG[[2]][q] )),
+            #varNamePlot[[q]] <- ggplot(data = dplyr::filter(SAF_summary, risk_factor == c( in_outDAG[[2]][q] )),
+             # varNamePlot[[q]] <- ggplot(data= as.data.frame( filter(SAF_summary, risk_factor == c( in_outDAG[[2]][q] )) )  ,
+            # varNamePlot[[q]] <- ggplot(data = test,
+                                   aes(x = location, y = value,  colour = type) ) +
+                                   theme_classic() +
+                                   geom_point(,size=4) +
+                                   # geom_point(size=4) +
+                                   geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2,width= 0.5) +
+                                   scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10)) +
+                                   scale_y_continuous("Average Sequential PAF") + theme(legend.position = "none") +
+                                   annotate(geom="text", x=6, y=0.4, label= in_outDAG[[2]][q],color="black",size=5)
+
+            # # TRY == as want exact match rather than %in% which will include partial matches
+            # varNamePlot[[q]] <- ggplot(data=filter(SAF_summary, risk_factor%in%c( in_outDAG[[2]][q] )),
+            #                        aes(x = location, y = value,  colour = type) ) +
+            #                        theme_classic() +
+            #                        geom_point(,size=4) +
+            #                        geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2,width= 0.5) +
+            #                        scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10)) +
+            #                        scale_y_continuous("Average Sequential PAF") + theme(legend.position = "none") +
+            #                        annotate(geom="text", x=6, y=0.4, label= in_outDAG[[2]][q],color="black",size=5)
+
+      }
+
+
+     # library(gridExtra)
+     # n <- length(plist)
+     # nCol <- floor(sqrt(n))
+     # do.call("grid.arrange", c(plist, ncol=nCol))
+      plot <- list()
+       n <- length(varNamePlot)
+       nCol <- floor(sqrt(n))
+       plot[[1]] <- do.call("grid.arrange", c(varNamePlot, ncol=nCol))
+
+      # dev.off()
+
+
+      # p1 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('phys')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(,size=4)+geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2,width= 0.5)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ theme(legend.position = "none")+ annotate(geom="text", x=6, y=0.4, label="Physical Inactivity",color="black",size=5)
+      #
+      # p2 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('ahei3tert')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(,size=4)+geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2,width= 0.5)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ theme(legend.position = "none")+ annotate(geom="text", x=6, y=0.17, label="Diet",color="black",size=5)
+      #
+      #
+      # p3 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('nevfcur')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(,size=4)+geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2,width= 0.5)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ theme(legend.position = "none")+ annotate(geom="text", x=6, y=0.15, label="Smoking",color="black",size=5)
+      #
+      #
+      # p4 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('alcohfreqwk')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(,size=4)+geom_ribbon(aes(ymin = LB, ymax = UB,fill=type),alpha=0.2,width= 0.5)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ theme(legend.position = "none")+ annotate(geom="text", x=6, y=0.07, label="Alcohol",color="black",size=5)
+      #
+      #
+      # p5 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('global_stress2')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(size=4)+geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ annotate(geom="text", x=6, y=0.10, label="Stress",color="black",size=5)+ theme(legend.position = "none")
+      #
+      # p6 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('htnadmbp')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(size=4)+geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ annotate(geom="text", x=6, y=0.45, label="High BP",color="black",size=5)+ theme(legend.position = "none")
+      #
+      # p7 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('cardiacrfcat')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(size=4)+geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ annotate(geom="text", x=6, y=0.14, label="Cardiac Factors",color="black",size=5)+ theme(legend.position = "none")
+      #
+      # p8 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('whrs2tert')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(size=4)+geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ annotate(geom="text", x=6, y=0.16, label="Waist Hip Ratio",color="black",size=5)+ theme(legend.position = "none")
+      #
+      # p9 <- ggplot(data=filter(SAF_summary,risk_factor%in%c('dmhba1c2')), aes(x=location, y=value,  colour=type)) +theme_classic()+
+      #         geom_point(size=4)+geom_ribbon(aes(ymin = LB, ymax = UB, fill=type),alpha=0.2)+
+      #         scale_x_continuous("Position",breaks=c(1,2,3,4,5,6,7,8,9,10))+scale_y_continuous("Average Sequential PAF")+ annotate(geom="text", x=6, y=0.04, label="Diabetes",color="black",size=5)+ theme(legend.position = "none")
+      #
+      # p10 <- ggplot() +
+      #         geom_point(data = SAF_summary, aes(x = location,y=value, colour=type),alpha=1) + xlim(100,1000)+ylim(100,1000)+
+      #
+      #         #Theme
+      #         theme(
+      #                 panel.background = element_rect(fill = "transparent",colour = NA),
+      #                 plot.margin = unit(c(0.1,0.1,0.1,0.1), "cm"),
+      #                 plot.title = element_text(size = 14, hjust = 0.5, vjust = 1),
+      #                 plot.background = element_rect(colour = 'white'),
+      #                 axis.title=element_blank(),
+      #                 axis.text = element_blank(),
+      #                 axis.ticks = element_blank(),
+      #                 legend.position = 'left',
+      #                 legend.title=element_text(size=15),
+      #                 legend.text=element_text(size=15),
+      #                 legend.background = element_rect(fill = "transparent")
+      #         )
+      #
+      # # library(gridExtra)
+      # # png("C:/Users/0118158S/OneDrive - National University of Ireland, Galway/Average_Attributable_Fraction_Extensions/SAF.png", width=12,height=6,units="in", res=300)
+      #
+      # grid.arrange(p1, p2,p3,p4,p5,p6,p7,p8,p9,p10, nrow = 2)
+      #
+      # dev.off()
+
+      my_list <- list("plot" =  plot[[1]], "SAF_summary" = SAF_summary )
+     return(my_list)
+
+}

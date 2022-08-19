@@ -1,0 +1,462 @@
+---
+title: "causalPAF: Causal Population Attrbutable Fractions (PAF)."
+author: Maurice O'Connell
+output: 
+  learnr::tutorial:
+  fig_caption: true
+  progressive: no
+  allow_skip: no
+runtime: shiny_prerendered
+bibliography: /Users/mauriceoconnell/Documents/Rpackages/PAF/Tutorial Demo/Bibfile/bibfilecausalPAF.bib
+---
+
+```{r setup, include=FALSE}
+# load packages
+library(learnr)
+library(tidyverse)
+# options
+knitr::opts_chunk$set(echo = FALSE)
+
+# # code checking
+# checker <- function(label, user_code, check_code, envir_result, evaluate_result, ...){
+#   list(message = check_code, correct = TRUE, location = "append")
+# }
+# 
+# tutorial_options(exercise.timelimit = 10, exercise.checker = checker)
+
+```
+
+![](images/causalPAFlogo.png){width=10%}  
+The <span style="color:red">`causalPAF`</span> package contains a suite of functions for causal analysis calculations of population attributable fractions (PAF) given a causal diagram which apply both:
+
+1. Pathway-specific population attributable fractions (PS-PAFs) and
+
+2. Sequential population attributable fractions.
+
+Results are presentable in both table and plot format.
+
+
+## Data
+The `strokedata` data within the <span style="color:red">`causalPAF`</span> package is a fictional case control dataset containing key causal and modifiable risk factors for stroke. The data is restricted to ischemic stroke patients and their matched controls according to age, gender and region.
+
+The risk factors are visible here in a causal Bayesian network.
+
+![ Hypothesized causal Bayesian network describing direct and indirect effects pertaining to causal risk factors and associated confounders for stroke. Abbreviations for variables in the causal graph are as follows. Sex: gender of participant; Region: Geographic area of participant either Western Europe, North America, Africa, South Asia, China, South America and South East Asia; Educ: years of education (None, less than 8, 9-12, more than 12); Stress: Summary variable for psychological stress (yes or no); Smoke: smoking status (current, ex-smoker, never smoker); Diet: AHEI diet score (in tertiles); Exer: physically active (yes or no); Alcoh: alcohol consumption (none; moderate; binge drinker); lipids: Apolipoproterion B/Apolipoprotein A1 ratio (in tertiles); WHR: waist hip ratio (in tertiles); HBP: clinically diagnosed high blood pressure (yes or no); HD (history of risk factors for heart disease - yes or no); DM (clinically diagnosed diabetes mellitus or measured Hba1c level at least 4.5 - yes or no)](images/causalBayesianNetworkStroke.png){width=50%}
+
+![Causal Bayesian Network with only Direct Causal effects\label{causalBayesNetSimplified}](images/BayesianNetworkDirectEffectsOnly.png){width=50%}
+
+
+![Simplification of network, showing it’s layered structure Confounders consists of the variables sex, region and education. Behaviour consists of the variables smoking status, diet, alcohol consumption, stress levels and physical activity. Physiology groups the variables lipids, waist hip ratio and high blood pressure. Pre-clinical disease consists of diabetes and risk factors for heart disease](images/causalBayesianNetworkSimplified.png){width=50%}
+
+## causalPAFplot() Function
+
+Load the causalPAF package (assuming it has already been installed). Inspect the data.
+
+```{r two-plus-two, exercise=TRUE}
+library(causalPAF)
+head(strokedata)
+```
+
+
+
+
+The <span style="color:red">`causalPAF`</span> package in R has two main parts:
+
+1. Path-specfic PAF and Mediation Analysis.
+2. Sequential PAF Analysis.
+
+As a first example, we run a model under a few causal assumptions which performs causal path-specific PAF estimation and mediation analysis using the directed acyclic graph (DAG) described in the causal Bayesian network earlier which included both direct and indirect effects. We will give an example which performs sequential PAF analysis later on. The main <span style="color:red">`causalPAF`</span> function for path-specific PAFs is <span style="color:red">`causalPAFplot`</span>, which can be used by specifying:
+
+1. dataframe; A wide format dataframe containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network. Patients are listed in rows with variables listed in columns.
+2. exposure; The name of the exposure column variable within dataframe in text format e.g. "phys".
+3. mediator; The name of the mediator column variables within dataframe in text format. There can be more than one mediator of interest. It can be a vector of mediators names within the dataframe e.g. c("subhtn","apob_apoa","whr").
+4. response; The name of the response or output column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
+5. response_model_mediators; A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the mediators in the causal Bayesian network. See example in tutorial. This model can be listed either as (1) an empty list ( response_model_mediators = list() ) or (2) the user can specify their own customised causal regression model(s) to use. When it is listed as an empty list the causalPAF package will fit the response_model_mediators regression model automatically based on the causal DAG supplied by the user in in_outArg. Alternatively, the user can specify the exact model(s) that the user wishes to use, these model(s) must be in list format (list() where length(response_model_mediators) == length(mediator) ), the same length as the parameter, mediator, with the user customised model for each mediator listed in the same order as in the parmeter, mediator, and if there is only one model, it must be listed each time within the list() so that length(response_model_mediators) == length(mediator).
+6. response_model_exposure; A regression model fitted for the response in a causal Bayesian network excluding ``children'' of the exposure in the causal Bayesian network. This regression model will not adjust for mediators (exclude mediators) of the exposure in the regression model so that the total effect of the exposure on the response can be modelled. This model can be listed either as (1) an empty list ( response_model_exposure = list() ) or (2) the user can specify their own customised causal regression model to use. If specified as an empty list, list(), then the causalPAF function will define and fit the model automatically based on the causal DAG defined by the in_outArg parameter. Alternatively, the user can specify the exact model that the user wishes to use, this model must be in list format (list() where length(response_model_exposure) == 1 ), of length 1, assuming only one exposure of interest (other exposures can be risk factors) and the model must be defined within a list() since the package assumes a list() format is supplied. See example in tutorial.
+7. in_outArg; This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
+8. Splines_outlist A list defined of same size and order of variables as defined in in_outArg[[2]]. If splines are to be used for variables listed in in_outArg[[2]], then the splines should be defined in Splines_outlist in the same order as variables appear in in_outArg[[2]]. It is necessary to list variables in Splines_outlist the same as in in_outArg[[2]] without splines if no spline is to be applied. It should not be input as an empty list, list(), if no splines. A warning will show if input as an empty list requiring the user to populate Splines_outlist either the same as in_outArg[[2]] (if no splines) or in the same order as in_outArg[[2]] with splines (if splines).  See example in tutorial.
+9. splinesDefinedIn_in_outDAG Logical TRUE or FALSE indicating whether the user has defined splines in the causal DAG, in_outArg. If FALSE and splines are defined in Splines_outlist_Var, then it is necessary for the package to populate the in_out DAG with splines listed in Splines_outlist_Var.
+10. model_listArg; is a list of models fitted for each of the variables in in_outArg[[2]] (or in_outArg\$outlist ) based on its parents given in in_outArg[[2]] ( or in_out\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted automatically by the causalPAF package based on the order of the variables input in the parameter in_outArg. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_listArg'' with their own fitted models for each risk factor, mediator, exposure and response varialble. But the order of these models must be in the same order of the variables in the second list of in_outArg ( in_outArg[[2]] ) and these models be defined within a list, list(), of the same length as in_outArg[[2]]. See tutorial for further examples.
+11. weights; Column of weights for case control matching listed in the same order as the patients in the data e.g. weights = strokedata$weights.
+12. NumBootstrap; The number of bootstraps the user wants to use to calculate confidence intervals for the effect. A minimum of 200 bootstrap repilcations (Efron (2016), Computer Age Statistical Inference, page 162) are recommended to calculate standard errors (for intervals of the form: estimate +/-1.96*(standard error of boostrap estimate. However increasing the number of bootstraps can result in the package taking a long time to run. So the user may decide to balance speed with accuracy depeding on which is of more value in the specific context.
+13. NumSimulation; This is the number of simulatons requested by the user to estimate integrals. The larger the number of simulations the more accurate the results but the longer the package takes to run. Therefore the user may wish to balance speed with accuracy depending on which is of more value in the specific context of interest. The integrals for continuous variables are estimated using simulation methods. To avoid numerical integration in the continuous mediator case, each mediator is estimated via simulation from estimated probability models and justified by the law of large numbers.
+14. plot; should be set to "bar". Where "bar" plots a bar chart with error bars. More plot options will be made available at later versions of the package.
+15. fill; The colour for the fill in the bar chart is set here in text format. The default is fill = "skyblue".
+16. colour; The colour for the error bar in the bar chart is set here in text format. The default is colour = "orange".
+17. addCustom; Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines. See tutorial for examples.
+18. custom; Text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interaction terms. See tutorial for examples.
+
+
+## Path-specific PAF and mediation analysis.
+PS-PAFs aim to fairly compare disease burden attributable to differing mediating pathways and gain insights into the dominant mechanisms by which the risk factor affects disease at a population level [@o2020pathway]. 
+
+![For example, how much of the total disease burden due to physical inactivity is mediated by each of these pathways? 
+It may be mediated by blood pressure (HBP) or blood lipids measured by the apob-apoa ratio (APOB) or waist-hip ratio (WHR) and other mediators. Or we could measure the direct pathway from the risk factor physical inactivity to stroke. ](images/Pathways2.png){width=50%}
+
+A typical call to the <span style="color:red">`causalPAFplot`</span> function for path-specific PAF and mediation analysis is like the following.
+
+Firstly, we need to define the causal structure or directed acyclic graph (DAG) of the causal Bayesian network defined by the data. 
+
+Here we use the fictional case control data frame, strokedata, defined in wide format which has the outcome or cases coded as 1 and controls 0. In addition, each of the columns contain confounders, exposure, risk factors, mediators and weigths for case control matching. The <span style="color:red">`causalPAF`</span> package assumes the user has the data frame prepared in this format.
+
+```{r prepareDataShort, echo=TRUE, eval=TRUE, warning=FALSE}
+
+# Loads the package.
+library(causalPAF)
+
+# Loads some data (fictional Stroke data from the package causalPAF)
+stroke_reduced <- strokedata
+
+# The data should contain a column of weights for case control matching.
+# strokedata$weights
+# Weigths are not needed for cohort/cross sectional designs.
+
+# The data should have reference levels of all risk factors already set. This can be done as follows:
+# levels(stroke_reduced$htnadmbp) <- c(0, 1)
+# stroke_reduced$subhtn <-  factor(stroke_reduced$subhtn,levels=c(1, 2))
+# levels(stroke_reduced$nevfcur) <- c(1, 2)
+# stroke_reduced$global_stress2  <- factor(stroke_reduced$global_stress2,levels=c(1,2))
+# levels(stroke_reduced$whrs2tert) <- c(1, 2, 3)
+# levels(stroke_reduced$phys) <- c(2, 1)
+# levels(stroke_reduced$alcohfreqwk) <- c(1, 2, 3)
+# stroke_reduced$dmhba1c2 <- factor(stroke_reduced$dmhba1c2,levels=c(1,2))
+# stroke_reduced$cardiacrfcat <- factor(stroke_reduced$cardiacrfcat,levels=c(1,2))
+# levels(stroke_reduced$ahei3tert) <- c(3,2,1)
+# levels(stroke_reduced$apob_apoatert) <- c(1,2,3)
+
+# The causalPAF package assumes the data is either complete case data or that missing data analysis has already been performed.
+
+# Next, define the causal structure or directed acyclic graph (DAG) of the causal Bayesian network defined by the data. We list the parents of each exposure or risk factor or outcome in a vector as follows:
+
+# Note it is important that the order at which the variables are defined is such that all parents of that variable are defined before it. Please refer to the figure of the causal Bayesian network (with both direct and indirect effects) defined earlier as an example of this order.
+
+in_phys <- c("subeduc","moteduc","fatduc")
+in_ahei <- c("subeduc","moteduc","fatduc")
+in_nevfcur <- c("subeduc","moteduc","fatduc")
+in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+in_global_stress2 <- c("subeduc","moteduc","fatduc")
+in_subhtn <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_apob_apoa <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_whr <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+
+# Note splines can be fitted within the causal structure as shown below especially if splines are to be used in the fitted models.
+# It is important that splines of parent variables are "typed" or "spelt" consistently (including spaces) throughout as causalPAF can fit models automatically provided variables are spelt consistently. Also if a parent variable is a spline it should be defined in spline format in all occurences of the parent variable.
+in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn")
+in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn")
+in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","subhtn","cardiacrfcat","dmhba1c2")
+
+# Then we define a two dimensional list consisting of
+# 1. inlist i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines should be included here if they are to be modelled as splines.
+# 2. outlist i.e. a list of each variable of interest corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data.
+# Again the order is such that each variable is defined after all its parents.
+
+in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,in_subhtn,in_apob_apoa,in_whr,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn","apob_apoa","whr","cardiacrfcat","dmhba1c2","case"))
+
+# If splines are to be used for variables listed in in_out$outlist, then the splines should be defined in the same order as variables appear in in_out$outlist as follows. It is necessary to list variables in in_out$outlist without splines if no spline is to be applied.
+## It is important that Splines_outlist is defined in the following format list(c("splinename1","splinename2","splinename3")) for the package to be applied correctly. And Splines_outlist should not be an empty list(). If there are no splines it should be defined the same as in_out[[2]] and in the same order as variables defined in_out[[2]].
+Splines_outlist = list( c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","subhtn","ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))","ns(whr,df=5)","cardiacrfcat","dmhba1c2","case") )
+
+# To fit these models to case control data, one needs to perform weighted maximum-likelihood estimation to imitate estimation using a random sample from the population. We chose weights of 0.0035 (for each case) and 0.9965 (for each control), reflective of a yearly incidence of first ischemic stroke of 0.35%, or 3.5 strokes per 1,000 individuals. These weights were chosen according to average incidences across country, age, group and gender within INTERSTROKE according to the global burden of disease.
+w <- rep(1,nrow(stroke_reduced))
+w[stroke_reduced$case==0] <- 0.9965
+w[stroke_reduced$case==1] <- 0.0035
+
+# It is important to assign stroke_reduced$weights to the updated weights defined in w. Otherwise if stroke_reduced$weights <- w is not set, the alternative weights supplied in the fictional data will be used. In this case, we want to use weigths as defined in w.
+stroke_reduced$weights <- w
+
+#The checkMarkovDAG() function in the causalPAF package should be used before running causalPAFplot() to ensure:
+#1. The causal Markov condition holds for the causal structure defined in the variable in_out.
+#2. The variables in in_out are listed in the order so that no variable is defined before a parent or direct cause. Note: if this order does not hold, checkMarkovDAG() will automatically reorder the variables in, in_out, provided it is a Markov DAG.
+
+#The causal analysis requires that the causal structure is a Markov DAG. The Causal Markov (CM) condition states that, conditional on the set of all its direct causes, a node is independent of all variables which are not direct causes or direct effects of that node. In the event that the structure of a Bayesian network accurately depicts causality, the two conditions are equivalent. However, a network may accurately embody the Markov condition without depicting causality, in which case it should not be assumed to embody the causal Markov condition.
+
+# in_out is as defined above and input into this code.
+if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
+  print("Your in_out DAG is a Markov DAG.")
+} else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
+
+  in_out <- checkMarkovDAG(in_out)[[2]]
+
+  print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your in_out list so that all parent variables come before descendants.")
+} else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the causalPAF package cannot be applied for non-Markov DAGs.")}
+
+
+# The pointEstimate() function evaluates Point Estimates for Total PAF, Direct PAF, Indirect PAF and Path Specific PAF for a user inputted number of integral simulations. There is no bootstap applied in this fucntion.
+# Since bootstraps are not applied, the pointEstimate() function will run quicker than the alternative causalPAFplot() function which calculates bootstrap estimates which can take longer to run.
+
+            pointEstimate(dataframe = stroke_reduced,
+                          exposure="phys",
+                          mediator=c("subhtn","apob_apoa","whr"),
+                          response="case",
+                          response_model_mediators = list(),
+                          response_model_exposure = list(),
+                          in_outArg = in_out,
+                          Splines_outlist = Splines_outlist,
+                          splinesDefinedIn_in_outDAG = TRUE,
+                          model_listArg = list(),
+                          # weights = stroke_reduced$weights,
+                          weights = w,
+                          NumSimulation = 1000,
+                          addCustom = TRUE,
+                          custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)")
+
+
+# The causalPAFplot() function will perform Pathway-Specific Population Attributable Fraction (PS-PAF) calculations and output results based on an exposure, mediators and response input by the user according to the columns names of these variables defined in the dataframe.
+
+# Setting model_listArg, response_model_mediators and response_model_exposure by default to an empty list will instruct the causalPAF package to fit these models automatically based on the causal DAG supplied in the in _outArg. Alternatively the user can supply their custom fitted, model_listpop, response_model_mediators and response_model_exposure which should be consistent with the causal structure.
+
+# Note we fit a custom interaction for the outcome (or case or response) regression ( custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)") ). Care should be taken that the customised regression should not contain variables that might affect the causal interpretation of the regression e.g. in this case we have used baseline confounders (i.e. regionn, eage and esex) with interactions and splines. In general, using baseline confounders in custom should not affect any causal interpretations whereas using variables far ``downstream'' might block causal pathways. The user is required to apply discretion in using ``addCustom'' and ``Custom'' in ensuring a causal interpretation remains. If no customisation is required the user can input addCustom = FALSE and custom = "" which is the default setting.
+
+# Finally we call the causalPAFplot function for the pathway-specific PAF calculations as follows:
+            causalPAFplot(dataframe = stroke_reduced,
+                          exposure="phys",
+                          mediator=c("subhtn","apob_apoa","whr"),
+                          response="case",
+                          response_model_mediators = list(),
+                          response_model_exposure = list(),
+                          in_outArg = in_out,
+                          Splines_outlist = Splines_outlist,
+                          splinesDefinedIn_in_outDAG = TRUE,
+                          model_listArg = list(),
+                          # weights = stroke_reduced$weights,
+                          weights = w,
+                          NumBootstrap = 2,
+                          NumSimulation = 2,
+                          plot = "bar",
+                          fill= "skyblue",
+                          colour="orange",
+                          addCustom = TRUE,
+                          custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)")
+
+
+# The causalPAFplot function below has response_model_mediators, response_model_exposure and model_listArg pre-fit. This allows the user to apply customised regressions instead of the default setting above, where the causalPAF R package fitted these regressions automatically based on the causalDAG defined in in_outArg.
+
+# Libraries must be loaded if fitting models outside of the causalPAF R package.
+library(MASS)
+library(splines)
+
+# Next we fit the, response_model_mediators and response_model_exposure, models outside of the causalPAF package as an input into the package.
+
+# It is important that response_vs_mediator is a list and it must be the same length as the parameter, mediator, i.e. length( response_vs_mediator ) == length( mediator). In this example, mediator=c("subhtn","apob_apoa","whr") so length( mediator) is 3, so we create a list with three models for "subhtn","apob_apoa" and "whr" respectively in that order. Note in this example, the model is the same for each mediator, but it must still be input 3 times within the list as follows:
+response_vs_mediator <-  list( glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn + ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+ns(whr,df=5)",data = stroke_reduced,family='binomial',w = stroke_reduced$weights ), # "subhtn" mediator model
+                               glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn + ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+ns(whr,df=5)",data = stroke_reduced,family='binomial',w = stroke_reduced$weights ), # "apob_apoa" mediator model
+                               glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2+ subhtn + ns(apob_apoa, knots = quantile(apob_apoa,c(.25,0.5,0.75)), Boundary.knots = quantile(apob_apoa,c(.001,0.95)))+ns(whr,df=5)",data = stroke_reduced,family='binomial',w = stroke_reduced$weights ) ) # "whr" mediator model
+
+# Next we fit a customised response_model_exposure model rather than allowing the package fit it automatically as shown previously. This must be a list of length 1.
+response_vs_phys <- list( glm("case ~ regionnn7*ns(eage,df=5)+esex*ns(eage,df=5) +  subeduc+ moteduc+ fatduc+ phys+ ahei3tert+ nevfcur+ alcohfreqwk+ global_stress2",data = stroke_reduced,family='binomial',w= stroke_reduced$weights) )
+
+# model_listArg is a list of models fitted for each of the variables in in_out$outlist based on its parents given in in_out$inlist. By default this is set to an empty list. Alternatively the user can supply their custom fitted, model_listpop, which should be consistent with the causal structure. model_listArg is defined earlier in this tutorial.
+# Note it is important that model_listArg is defined as a list and in the same order and length as the variables defined in in_outArg[[2]].
+
+model_listArgFit <- list(glm(formula = phys ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + moteduc + fatduc, family = "binomial", data = stroke_reduced, weights = weights), # model 1 phys
+polr(formula = ahei3tert ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + moteduc + fatduc, data = stroke_reduced, weights = weights), # model 2 ahei3tert
+glm(formula = nevfcur ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 3 nevfcur
+polr(formula = alcohfreqwk ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc, data = stroke_reduced,
+    weights = weights), # model 4 alcohfreqwk
+glm(formula = global_stress2 ~ subeduc + regionnn7 * ns(eage,
+    df = 5) + esex * ns(eage, df = 5) + moteduc + fatduc, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 5 global_stress2
+glm(formula = subhtn ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 6 subhtn
+lm(formula = apob_apoa ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2, data = stroke_reduced,
+    weights = weights), # model 7 apob_apoa
+lm(formula = whr ~ subeduc + regionnn7 * ns(eage, df = 5) + esex *
+    ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2, data = stroke_reduced,
+    weights = weights), # model 8 whr
+glm(formula = cardiacrfcat ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2 + ns(apob_apoa, knots = quantile(apob_apoa,
+    c(0.25, 0.5, 0.75)), Boundary.knots = quantile(apob_apoa,
+    c(0.001, 0.95))) + ns(whr, df = 5) + subhtn, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 9 cardiacrfcat
+glm(formula = dmhba1c2 ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2 + ns(apob_apoa, knots = quantile(apob_apoa,
+    c(0.25, 0.5, 0.75)), Boundary.knots = quantile(apob_apoa,
+    c(0.001, 0.95))) + ns(whr, df = 5) + subhtn, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 10 dmhba1c2
+glm(formula = case ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2 + ns(apob_apoa, knots = quantile(apob_apoa,
+    c(0.25, 0.5, 0.75)), Boundary.knots = quantile(apob_apoa,
+    c(0.001, 0.95))) + ns(whr, df = 5) + subhtn + cardiacrfcat +
+    dmhba1c2, family = "binomial", data = stroke_reduced, weights = weights) # model 11 case
+)
+
+
+            causalPAFplot(dataframe = stroke_reduced,
+                          exposure="phys",
+                          mediator=c("subhtn","apob_apoa","whr"),
+                          response="case",
+                          # response_model_mediators = list(),
+                          response_model_mediators = response_vs_mediator,
+                          response_model_exposure = response_vs_phys,
+                          # response_model_exposure = list(),
+                          in_outArg = in_out,
+                          Splines_outlist = Splines_outlist,
+                          splinesDefinedIn_in_outDAG = TRUE,
+                          # model_listArg = list(),
+                          model_listArg = model_listArgFit,
+                          # weights = stroke_reduced$weights,
+                          weights = w,
+                          NumBootstrap = 2,
+                          NumSimulation = 2,
+                          plot = "bar",
+                          fill= "skyblue",
+                          colour ="orange" )
+
+
+
+```
+
+## sequentialPAF() Function
+
+The sequentialPAF() function calculates Sequential Population Attributable Fractions in a Bayesian Network. The parameters of the sequentialPAF() function are as follows:
+
+
+1. dataframe: A wide format dataframe containing all the risk factors, confounders, exposures and outcomes within the causal DAG Bayesian network. Patients are listed in rows with variables listed in columns.
+2. model_list_var: is a list of models fitted for each of the variables in in_outDAG[[2]] (or in_outDAG\$outlist ) based on its parents given in in_outDAG[[1]] ( or in_outDAG\$inlist ). By default this is set to an empty list. In the default setting, the models are fitted based on the order of the variables input in the parameter in_outDAG. See the tutorial for more examples. Alternatively, the user can supply their own fitted models here by populating ``model_list_var'' with their own fitted models for each risk factor, mediator, exposure and response variable. But the order of these models must be in the same order of the variables in the second list of in_outDAG and it must be defined as a list() of the same length as in_outDAG[[2]]. See tutorial for further examples.
+3. weights: Column of weights for case control matching listed in the same order as the patients in the data e.g. from tutorial weights = strokedata$weights.
+4. in_outDAG: This defines the causal directed acyclic graph (DAG). A list of length 2. It is defined as a two dimensional list consisting of, firstly, the first list, inlist, i.e. a list of the parents of each variable of interest corresponding to its column name in the data. Splines can be included here if they are to be modelled as splines. Secondly, the second list, outlist, contains a list of a single name of exposure or risk factor or outcome in form of characters i.e. a list of each variable of interest (risk factors, exposures and outcome) corresponding to its column name in the data. Splines should not be input here, only the column names of the variables of interest in the data. The order at which variables are defined must satisfy (i) It is important that variables are defined in the same order in both lists e.g. the first risk factor defined in outlist has its parents listed first in inlist, the second risk factor defined in outlist has its parents listed secondly in inlist and so on. The package assumes this ordering and will not work if this order is violated. (ii) Note it is important also that the order at which the variables are defined is such that all parents of that variable are defined before it. See example in tutorial.
+5. response: The name of the response column variable within dataframe in text format e.g. "case". The cases should be coded as 1 and the controls as 0.
+6. NumOrderRiskFactors: is the number of randomly sampled elimination orders (or random permutations of all the risk factors) computing Monte-Carlo sequential attributable fractions for each random permutation.
+7. addCustom: Logical TRUE or FALSE indicating whether a customised interaction term is to be added to the each regression. The interaction term can include splines.
+8. custom: text containing the customised interaction term to be added to each regression. The text should be enclosed in inverted commas. Splines can be included within the interaction terms. See tutorial for examples.
+
+
+## Sequential Population Attributable Fractions.
+
+Sequential PAFs model exposure-exposure and exposure-disease interrelationships using a causal Bayesian network, assuming no unmeasured latent confounders. This allows us to model not only the direct impact of removing a risk factor on disease, but also the indirect impact through the effect on the prevalence of causally downstream risk factors that are typically ignored when calculating sequential and average attributable fractions. The procedure for calculating sequential attributable fractions involves repeated applications of Pearl’s do-operator over a fitted Bayesian network, and simulation from the resulting joint probability distributions [@ferguson2020revisiting].
+
+```{r sequentialPAF, echo=TRUE, eval=TRUE, warning=FALSE}
+
+# The comments are omitted here. Please refer to the section on Path-specific PAF and mediation analysis where detailed comments are provided.
+library(causalPAF)
+
+stroke_reduced <- strokedata
+
+# Splines and continuous variables cannot be implemented in the sequentialPAF function within the causalPAF package at present, and continuous variables need to be categorised.
+# It is envisaged that in a future update of the causalPAF package that we will develop a type of sequential PAF that can account for continuous variables and splines.
+# Splines are removed below. We also model high blood pressure with the variable "htnadmbp", in this case rather than "subhtn". 
+
+in_phys <- c("subeduc","moteduc","fatduc")
+in_ahei <- c("subeduc","moteduc","fatduc")
+in_nevfcur <- c("subeduc","moteduc","fatduc")
+in_alcohfreqwk <- c("subeduc","moteduc","fatduc")
+in_global_stress2 <- c("subeduc","moteduc","fatduc")
+in_htnadmbp <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_apob_apoatert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_whrs2tert <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2")
+in_cardiacrfcat <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp")
+in_dmhba1c2 <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp")
+in_case <- c("subeduc","moteduc","fatduc","phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","apob_apoatert","whrs2tert","htnadmbp","cardiacrfcat","dmhba1c2")
+
+in_out <- list(inlist=list(in_phys,in_ahei,in_nevfcur,in_alcohfreqwk,in_global_stress2,in_htnadmbp,in_apob_apoatert,in_whrs2tert,in_cardiacrfcat,in_dmhba1c2,in_case),outlist=c("phys","ahei3tert","nevfcur","alcohfreqwk","global_stress2","htnadmbp","apob_apoatert","whrs2tert","cardiacrfcat","dmhba1c2","case"))
+
+# Since splines or continuous variables are not modelled, splines and continuous variables should not be listed in the current version of the package for sequentialPAFs.
+
+if(checkMarkovDAG(in_out)$IsMarkovDAG & !checkMarkovDAG(in_out)$Reordered){
+  print("Your in_out DAG is a Markov DAG.")
+} else if( checkMarkovDAG(in_out)$IsMarkovDAG & checkMarkovDAG(in_out)$Reordered ) {
+
+  in_out <- checkMarkovDAG(in_out)[[2]]
+
+  print("Your in_out DAG is a Markov DAG.The checkMarkovDAG function has reordered your in_out list so that all parent variables come before descendants.")
+} else{ print("Your ``in_out'' list is not a Bayesian Markov DAG so the methods in the causalPAF package cannot be applied for non-Markov DAGs.")}
+
+w <- rep(1,nrow(stroke_reduced))
+w[stroke_reduced$case==0] <- 0.9965
+w[stroke_reduced$case==1] <- 0.0035
+
+stroke_reduced$weights <- w
+
+sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+                                 model_list_var = list(),
+                                 weights = w,
+                                 in_outDAG = in_out,
+                                 response = "case",
+                                 NumOrderRiskFactors = 1000,
+                                 # NumOrderRiskFactors = 3,
+                                 addCustom = TRUE,
+                                 custom = "regionnn7*ns(eage,df=5)+esex*ns(eage,df=5)" )
+
+sequentialPAF$SAF_summary
+
+
+## Alternatively, the user can supply a customised model_list_var parameter as follows:
+
+# Libraries must be loaded if fitting models outside of the causalPAF R package.
+library(MASS)
+library(splines)
+
+# model_list_var is a list of models fitted for each of the variables in in_outDAG$outlist based on its parents given in in_outDAG$inlist. By default this is set to an empty list. Alternatively the user can supply their custom fitted, model_list as follows, which should be consistent with the causal structure.
+# Note it is important that model_listArg is defined as a list and in the same order and length as the variables defined in in_outDAG[[2]].
+
+
+
+
+model_list <- list(glm(formula = phys ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + moteduc + fatduc, family = "binomial", data = stroke_reduced, weights = weights), # model 1 phys
+polr(formula = ahei3tert ~ subeduc + regionnn7 * ns(eage, df = 5) + esex * ns(eage, df = 5) + moteduc + fatduc, data = stroke_reduced, weights = weights), # model 2 ahei3tert
+glm(formula = nevfcur ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 3 nevfcur
+polr(formula = alcohfreqwk ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc, data = stroke_reduced,
+    weights = weights), # model 4 alcohfreqwk
+glm(formula = global_stress2 ~ subeduc + regionnn7 * ns(eage,
+    df = 5) + esex * ns(eage, df = 5) + moteduc + fatduc, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 5 global_stress2
+glm(formula = htnadmbp ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 6 htnadmbp
+polr(formula = apob_apoatert ~ regionnn7 * ns(eage, df = 5) + 
+    esex * ns(eage, df = 5) + subeduc + moteduc + fatduc + phys + 
+    ahei3tert + nevfcur + alcohfreqwk + global_stress2,data = stroke_reduced,
+    weights = weights), # model 7 apob_apoatert
+polr(formula = whrs2tert ~ regionnn7 * ns(eage, df = 5) + esex * 
+    ns(eage, df = 5) + subeduc + moteduc + fatduc + phys + ahei3tert + 
+    nevfcur + alcohfreqwk + global_stress2, data = stroke_reduced,
+    weights = weights), # model 8 whrs2tert
+glm(formula = cardiacrfcat ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2 + apob_apoatert + whrs2tert + htnadmbp, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 9 cardiacrfcat
+glm(formula = dmhba1c2 ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2 + apob_apoatert + whrs2tert + htnadmbp, family = "binomial",
+    data = stroke_reduced, weights = weights), # model 10 dmhba1c2
+glm(formula = case ~ subeduc + regionnn7 * ns(eage, df = 5) +
+    esex * ns(eage, df = 5) + moteduc + fatduc + phys + ahei3tert +
+    nevfcur + alcohfreqwk + global_stress2 + apob_apoatert + whrs2tert + htnadmbp + cardiacrfcat +
+    dmhba1c2, family = "binomial", data = stroke_reduced, weights = weights) # model 11 case
+)
+
+
+
+sequentialPAF <- sequential_PAF( dataframe = stroke_reduced,
+                                 model_list_var = model_list,
+                                 weights = stroke_reduced$weights,
+                                 in_outDAG = in_out,
+                                 response = "case",
+                                 NumOrderRiskFactors = 3 )
+
+sequentialPAF$SAF_summary
+
+
+```
+
+
+
+
+
+
+# References

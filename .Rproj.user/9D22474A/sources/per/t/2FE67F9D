@@ -1,0 +1,28 @@
+{
+    "id": "2FE67F9D",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/man/causalPAFplot.Rd",
+    "project_path": "man/causalPAFplot.Rd",
+    "type": "r_doc",
+    "hash": "1906915589",
+    "contents": "",
+    "dirty": false,
+    "created": 1660214626343.0,
+    "source_on_save": false,
+    "relative_order": 34,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "49,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660658520,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660658520,
+    "read_only": true,
+    "read_only_alternatives": [
+        "R/causalPAFplot.R"
+    ]
+}

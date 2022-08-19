@@ -1,0 +1,26 @@
+{
+    "id": "65A6DF2A",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/overall_direct.R",
+    "project_path": "R/overall_direct.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1622656664918.0,
+    "source_on_save": false,
+    "relative_order": 16,
+    "properties": {
+        "tempName": "Untitled1",
+        "cursorPosition": "7,1173",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660928328,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660928328,
+    "read_only": false,
+    "read_only_alternatives": []
+}

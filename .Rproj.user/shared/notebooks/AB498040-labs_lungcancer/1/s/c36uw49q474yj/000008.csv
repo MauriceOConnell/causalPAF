@@ -1,0 +1,5 @@
+"0","library(ggplot2)
+"
+"2","Error: package or namespace load failed for ‘ggplot2’ in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]):
+ namespace ‘rlang’ 0.4.6 is already loaded, but >= 0.4.10 is required
+"

@@ -1,0 +1,26 @@
+{
+    "id": "15A9500C",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/addInSplinesTo_in_out.R",
+    "project_path": "R/addInSplinesTo_in_out.R",
+    "type": "r_source",
+    "hash": "3295082272",
+    "contents": "",
+    "dirty": false,
+    "created": 1625586779691.0,
+    "source_on_save": false,
+    "relative_order": 8,
+    "properties": {
+        "tempName": "Untitled2",
+        "cursorPosition": "12,59",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660665751,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660665751331,
+    "read_only": false,
+    "read_only_alternatives": []
+}

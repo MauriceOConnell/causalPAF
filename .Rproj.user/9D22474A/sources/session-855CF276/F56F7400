@@ -1,0 +1,26 @@
+{
+    "id": "F56F7400",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/causalPAFplot.R",
+    "project_path": "R/causalPAFplot.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1614190166596.0,
+    "source_on_save": false,
+    "relative_order": 33,
+    "properties": {
+        "tempName": "Untitled2",
+        "cursorPosition": "123,53",
+        "scrollLine": "108",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660928328,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660928328,
+    "read_only": false,
+    "read_only_alternatives": []
+}

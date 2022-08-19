@@ -1,0 +1,219 @@
+library(reshape2)
+library(MASS)
+
+##  create a random version of the Eide/Gefeller dataset on chronic cough
+set.seed(30042020)
+ex_probs <- c(.06732,.02976,.01570,.01787,.01445,.01008,.06986,.06553,.03,.05766,
+              .09680,.04194,.02741,.02194,.02474,.01031,.12410,.09537,.08408,.09509) # P(E|D)
+disease_probs <- c(.036,.0621,.0236,.0411,.0507,.0864,.1066,.1745,.1867,.2891,.0514,
+                   .0875,.0339,.0584,.0718,.1206,.1474,.2345,.2497,.3708) # P(D|E)
+pe <- ex_probs/disease_probs ## marginal P(E)
+pe <- pe/sum(pe)
+nond_exposure_probs <- (1-disease_probs)*pe  # P(E|not D)
+nond_exposure_probs <- nond_exposure_probs/sum(nond_exposure_probs)
+ex_probs <- ex_probs/sum(ex_probs)
+the.mat <- cbind(c(rep(0,10),rep(1,10)),rep(rep(1:5,each=2),2),rep(c(0,1),10))
+ncase <- 5000
+ncontrol <- 5000
+casemat <- the.mat[sample(1:20,size=ncase,replace=TRUE,prob=ex_probs),]
+case_rows <- cbind(rep(1,ncase),casemat)
+controlmat <- the.mat[sample(1:20,size=ncase,replace=TRUE,prob=nond_exposure_probs),]
+control_rows <- cbind(rep(0,ncontrol),controlmat)
+the.d <- rbind(case_rows,control_rows)
+colnames(the.d) <- c("y","urban.rural","smoking.category","occupational.exposure")
+the.d <- as.data.frame(the.d)
+the.d$smoking.category <- as.factor(the.d$smoking.category)
+
+
+
+#######################  Step 1.  Specify the structure of the causal graph, by denoting variables that 'point' to each of the variable in the graph (in inlist).  Outlist is just a list of the nodes of the graph, considered as the target variable, in an order corresponding to inlist.  Variables in out_list should be ordered so that any variable which has a causal effect on another (in that the second node can be traced from the first node by a sequence of 'forward arrows' in the assumed causal graph) should be specified before the variable on which it has a causal effect.  Here we are assuming that urban.rural effects smoking, occupational_exposure and y, and so it should be specified first.  y (which is an effect of all other variables) should be specified last and the order of smoking and occupational exposure is arbitrary. Here 'y' denotes chronic cough.
+
+in_urban.rural <- c("")
+in_smoking.category <- c("urban.rural")
+in_occupational.exposure <- c("urban.rural")
+in_y <- c("urban.rural","smoking.category","occupational.exposure")
+
+## store these dependencies in lists for future use
+inlist <- list(in_urban.rural, in_smoking.category, in_occupational.exposure, in_y)
+outlist <- c("urban.rural","smoking.category","occupational.exposure", "y")
+
+
+######################  Step 2.  Specify models for each node in the causal graph.  Models can be arbitrary (e.g. with interactions/splines).  Here main effects models are used for simplicity.  Note that we have simulated case control data - so that in the dataset 50%  of patients have chronic cough.  The models fitted models refer to the population, where only 9% of population have chronic cough.  To make an adjustment for this, we re-weight cases and controls according to population prevalence. This reweigthing step may not be necessary if original dataset was from a longitudinal cohort study - or a cross sectional study.
+
+###   Current simulation allows lm, glm models and ordinal models (using the polr function in MASS), functions would need to be edited to expand this list (say for poisson regression).  The levels of any factor variable need to be ordered so that the reference level corresponds to the absense of the risk factor.  While continuous variables may be included as risk factors, the attributable fractions for these variables will be calculated by predicting risk when the variable is set to 0 which may or may not be sensible depending on the context.  
+
+
+prev=0.09
+w = prev*as.numeric(the.d$y==1) + (1-prev)*as.numeric(the.d$y==0)
+model_urban.rural <- glm(urban.rural ~ 1,data=the.d,family='binomial',weights=w)
+model_smoking.category <- polr(smoking.category ~ urban.rural,data=the.d,weights=w)
+model_occupational.exposure <- glm(occupational.exposure ~ urban.rural,data=the.d,family='binomial',weights=w)
+model_y <- glm(y ~ urban.rural + smoking.category + occupational.exposure,data=the.d,family='binomial',weights=w)
+
+
+##  put models in a list in the same order as out_list:
+model_list <- list(model_urban.rural, model_smoking.category, model_occupational.exposure, model_y)
+
+
+
+######  load the following functions to simulate data given interventions. 
+
+sim_outnode <- function(col_num, current_mat, inlist, col_list){
+  
+   if(is.factor(current_mat[,col_num])) current_mat[,col_num] <- levels(the.d[,col_num])[1]
+  if(is.numeric(current_mat[,col_num])) current_mat[,col_num] <- 0
+  
+  colname <- colnames(current_mat)[col_num]
+  
+  for(i in 1:length(inlist)){
+    if(colname %in% inlist[[i]]){
+      if(length(table(current_mat[,col_list[[i]]] ))==1) next
+      
+      if(is.factor(current_mat[,col_list[i]])) current_mat[,col_list[i]] <- factor(do_sim(col_list[i],current_mat,model_list[[i]]),levels=levels(current_mat[,col_list[i]]))
+      if(!is.factor(current_mat[,col_list[i]])) current_mat[,col_list[i]] <- do_sim(col_list[i],current_mat,model_list[[i]])
+    }
+  }
+  current_mat
+}
+
+
+do_sim <- function(colnum,current_mat, model){
+  ## polr
+  if(names(model)[2]=='zeta'){
+    
+    probs <- predict(model,newdata=current_mat,type="probs")
+    mynames <- colnames(probs)
+    return(apply(probs,1,function(x){base::sample(mynames,size=1,prob=x)}))       
+  }      
+  # glm
+  if(grep("glm",model$call)){
+    
+    probs <- predict(model,newdata=current_mat,type="response")
+    if(is.null(levels(current_mat[,colnum]))) return(apply(cbind(1-probs,probs),1,function(x){base::sample(c(0,1),size=1,prob=x)})) 
+    return(apply(cbind(1-probs,probs),1,function(x){base::sample(levels(current_mat[,colnum]),size=1,prob=x)}))
+  }
+  # regression
+  if(grep("lm",model$call)){
+    
+    pred <- predict(model,newdata=current_mat,type="response")
+    s_d <- sd(model$residuals)
+    return(pred + rnorm(length(pred),mean=0,sd=s_d))
+  }
+}
+
+
+causal_average_PAF <- function(data=the.d, model_list=model_list, inlist=inlist, outlist=outlist, prev=.09, nsim=100, alpha=0.05){
+
+  w = rep(1, nrow(the.d))
+  if(!is.na(prev)){
+    w = prev*as.numeric(the.d$y==1) + (1-prev)*as.numeric(the.d$y==0)
+  }
+  
+  
+col_list <- numeric(length(outlist))
+N <- length(col_list)-1
+for(i in 1:(N+1)) col_list[i] <- (1:ncol(the.d))[colnames(the.d)==outlist[i]]
+sim_disease_current_population <- predict(model_list[[N+1]],type="response") 
+
+
+SAF_mat <- matrix(0,nrow=nsim,ncol=N)
+SAF_mat_2 <- matrix(0,nrow=nsim,ncol=N)
+order_mat <- matrix(0,nrow=nsim,ncol=N)
+reverse_order_mat <- matrix(0,nrow=nsim,ncol=N)
+for(i in 1:nsim){
+  
+  the_order <- col_list[1:N][sample(1:N,N)]     
+  
+  reverse_order <- numeric(N)
+  for(j in 1:N) reverse_order[j] <- (1:N)[the_order==col_list[j]]  
+  
+  current_mat <- the.d
+  current_mat_2 <- the.d
+  SAF <- numeric(N)
+  SAF_2 <- numeric(N)
+  no_intervention <- sim_disease_current_population
+
+ 
+  for(j in 1:length(the_order)){
+    
+    current_mat <- sim_outnode(the_order[j],current_mat,inlist=inlist,col_list=col_list)
+    SAF[j] <- (sum(w*no_intervention) - sum(w*current_mat[,col_list[N+1]]))
+    no_intervention <- current_mat[,col_list[N+1]] 
+  
+  }
+  SAF <- SAF/sum(w*sim_disease_current_population)
+  SAF_mat[i,] <- SAF[reverse_order]
+  order_mat[i,] <- the_order
+  reverse_order_mat[i,] <- reverse_order
+  if(i %% 100 == 0){
+  flush.console()
+  print(i)
+  }
+  
+}
+colnames(SAF_mat) <- colnames(the.d)[col_list][1:N]
+colnames(reverse_order_mat) <- colnames(the.d)[col_list][1:N]
+
+average_PAF=apply(SAF_mat,2,mean)
+SAF_summary <- matrix(0,nrow=N,ncol=N)
+
+for(i in 1:N){
+  for(j in 1:N){
+    SAF_summary[i,j] <- mean(SAF_mat[,j][order_mat[,i]==col_list[j]])
+  }
+}
+colnames(SAF_summary) <- names(average_PAF)
+rownames(SAF_summary) <- paste("elimination position ", (1:N),sep='')
+
+ME_SAF_summary <- matrix(0,nrow=N,ncol=N)
+colnames(ME_SAF_summary) <- colnames(SAF_mat)
+
+for(i in 1:N){
+  for(j in 1:N){
+    ME_SAF_summary[i,j] <- qt(1-alpha/2, df=sum(order_mat[,i]==col_list[j])-1)*sd(SAF_mat[,j][order_mat[,i]==col_list[j]])/sqrt(sum(order_mat[,i]==col_list[j]))
+  }
+}
+temp1 <- melt(SAF_summary)
+SAF_summary <- cbind(melt(SAF_summary),ME=melt(ME_SAF_summary)[,3])
+
+UB2 <- SAF_summary$value+SAF_summary$ME
+LB2 <- SAF_summary$value-SAF_summary$ME
+
+SAF_summary$LB <- c(LB2)
+SAF_summary$UB <- c(UB2)
+newdf <- data.frame(Var1=rep("Average",N),Var2=names(average_PAF),value=as.numeric(average_PAF), ME=qt(1-alpha/2, df=nsim-1)*apply(SAF_mat,2,sd)/sqrt(nsim), LB=as.numeric(average_PAF)-qt(1-alpha/2, df=nsim-1)*apply(SAF_mat,2,sd)/sqrt(nsim),UB=as.numeric(average_PAF)+qt(1-alpha/2, df=nsim-1)*apply(SAF_mat,2,sd)/sqrt(nsim))
+
+SAF_summary <- rbind(SAF_summary, newdf)
+rownames(SAF_summary) = NULL
+colnames(SAF_summary) <- c("position", "risk factor", "estimate", "Margin error", "lower bound", "Upper bound")
+return(SAF_summary)
+
+}
+
+#####  Step 4 apply function to data.
+###  Set prev=NA for cohort/cross-sectional data. nsim is the number of random sequential PAFs that are simulated.  Please note the margin of errors are errors in approximation for the best estimate of the sequential and average PAF which would be obtained as nsim tends to infinity. The procedure needs to be bootstrapped to calculate standard errors and confidence bands.
+
+
+PAF_1 <- causal_average_PAF(data=the.d, model_list=model_list, inlist=inlist, outlist=outlist, prev=.09, nsim=100)
+
+
+####  compare to calculation if risk factors are all independent
+model_urban.rural <- glm(urban.rural ~ 1,data=the.d,family='binomial',weights=w)
+model_smoking.category <- polr(smoking.category ~ 1,data=the.d,weights=w)
+model_occupational.exposure <- glm(occupational.exposure ~ 1,data=the.d,family='binomial',weights=w)
+model_y <- glm(y ~ urban.rural + smoking.category + occupational.exposure,data=the.d,family='binomial',weights=w)
+model_list2 <- list(model_urban.rural, model_smoking.category, model_occupational.exposure, model_y)
+
+in_urban.rural <- c("")
+in_smoking.category <- c("")
+in_occupational.exposure <- c("")
+in_y <- c("urban.rural","smoking.category","occupational.exposure")
+in_list2 <- list(in_urban.rural, in_smoking.category, in_occupational.exposure, in_y)
+
+PAF_2 <- causal_average_PAF(data=the.d, model_list=model_list2, inlist=in_list2, outlist=outlist, prev=.09, nsim=100)
+
+###  check with averisk (should be similar to PAF_2) - although the following calculates exact estimated PAF (as it avoids simulation by default)
+library(averisk)
+getAF(y~urban.rural+smoking.category+occupational.exposure,the.d,prev=0.09)
+
+

@@ -1,0 +1,26 @@
+{
+    "id": "A7452326",
+    "path": "~/Documents/Rpackages/PAF/causalPAF/R/checkMarkovDAG.R",
+    "project_path": "R/checkMarkovDAG.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1622828058779.0,
+    "source_on_save": false,
+    "relative_order": 12,
+    "properties": {
+        "tempName": "Untitled9",
+        "cursorPosition": "54,0",
+        "scrollLine": "0",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1660928328,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660928328,
+    "read_only": false,
+    "read_only_alternatives": []
+}
