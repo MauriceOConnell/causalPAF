@@ -1,7 +1,7 @@
 Type: Package
 Package: causalPAF
 Title: Causal Effect for Population Attributable Fractions (PAF)
-Version: 1.2.5
+Version: 1.2.5.9020
 Date: 2022-08-18
 Authors@R: c(
     person("Maurice", "O'Connell", , "maurice.oconnell2@gmail.com", role = c("aut", "cph", "cre"),
